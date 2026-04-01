@@ -20,7 +20,7 @@
   <div class="flex items-center gap-2 mb-6" style="animation: systemBoot 0.6s ease-out both">
     <span class="w-1.5 h-1.5 rounded-full bg-gold"
       style="animation: statusDot 1.5s ease-in-out infinite; box-shadow: 0 0 6px rgba(255,209,102,0.8)"></span>
-    <span class="font-mono text-[0.58rem] tracking-[5px] text-gold/60 uppercase">BOSS_DEFEATED</span>
+    <span class="font-mono text-[0.58rem] tracking-[5px] text-gold/60 uppercase">BOSS_VAINCU</span>
   </div>
 
   <!-- Victory beam line -->
@@ -30,9 +30,9 @@
 
   <h1 class="text-5xl font-black tracking-[8px] uppercase italic"
     style="color: #FFD166; text-shadow: 0 0 30px rgba(255,209,102,0.6), 0 0 60px rgba(255,209,102,0.25);
-           animation: fadeInUp 0.5s 0.1s ease-out both">VICTORY</h1>
+           animation: fadeInUp 0.5s 0.1s ease-out both">VICTOIRE</h1>
   <p class="font-mono text-[0.6rem] tracking-[6px] text-dim/60 mt-1"
-    style="animation: systemBoot 0.6s 0.3s ease-out both">ENEMY SLAIN</p>
+    style="animation: systemBoot 0.6s 0.3s ease-out both">ENNEMI ABATTU</p>
   <p class="text-xl font-black tracking-[4px] text-primary mt-1.5 mb-8 uppercase italic"
     style="text-shadow: 0 0 15px rgba(230,57,70,0.6); animation: fadeInUp 0.5s 0.2s ease-out both">
     {boss.name}
@@ -50,14 +50,14 @@
     <p class="font-mono text-5xl font-black"
       style="color: #FFD166; text-shadow: 0 0 30px rgba(255,209,102,0.7), 0 0 60px rgba(255,209,102,0.25);
              animation: pulseGlowGold 2s ease-in-out infinite">+{state.xpEarned}</p>
-    <p class="font-mono text-[0.6rem] tracking-[6px] text-dim/60 mt-1 uppercase">XP Earned</p>
+    <p class="font-mono text-[0.6rem] tracking-[6px] text-dim/60 mt-1 uppercase">XP Gagnes</p>
   </div>
 
   <!-- Stats row -->
   <div class="flex gap-8 mb-10 font-mono text-sm text-dim/70"
     style="animation: fadeInUp 0.5s 0.4s ease-out both">
     <span>⚡ <strong class="text-white">{state.reps}</strong> reps</span>
-    <span>⏱ <strong class="text-white">{fmtTime}</strong> left</span>
+    <span>⏱ <strong class="text-white">{fmtTime}</strong> restant</span>
   </div>
 
   <!-- Claim button -->

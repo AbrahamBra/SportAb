@@ -12,7 +12,14 @@
   --color-dim: rgba(255,255,255,0.45);
   --color-success: #4ADE80;
   --color-warning: #FBBF24;
+  --font-sans: 'Inter', system-ui, sans-serif;
   --font-display: 'Oswald', 'Arial Black', sans-serif;
+}
+
+/* Safe area for notched phones */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* ─── CYBERPUNK / SOLO LEVELING ANIMATIONS ─────────────────────────────── */

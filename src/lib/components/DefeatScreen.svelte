@@ -6,7 +6,7 @@
   } = $props();
   const pct = $derived(Math.round((state.damageDealt / state.bossMaxHP) * 100));
   const encouragement = $derived(
-    pct >= 80 ? 'SO CLOSE. ONE MORE TRY.' : pct >= 50 ? 'GREAT EFFORT. KEEP PUSHING.' : 'EVERY REP COUNTS. ARISE.'
+    pct >= 80 ? 'SI PRES. ENCORE UN ESSAI.' : pct >= 50 ? 'BEL EFFORT. CONTINUE.' : 'CHAQUE REP COMPTE. RELEVE-TOI.'
   );
 </script>
 
@@ -20,7 +20,7 @@
   <div class="flex items-center gap-2 mb-6" style="animation: systemBoot 0.6s ease-out both">
     <span class="w-1.5 h-1.5 rounded-full bg-primary"
       style="animation: statusDot 0.8s ease-in-out infinite; box-shadow: 0 0 6px rgba(230,57,70,0.8)"></span>
-    <span class="font-mono text-[0.58rem] tracking-[5px] text-primary/60 uppercase">COMBAT_FAILED</span>
+    <span class="font-mono text-[0.58rem] tracking-[5px] text-primary/60 uppercase">COMBAT_ECHOUE</span>
   </div>
 
   <!-- Defeat line -->
@@ -30,9 +30,9 @@
 
   <h1 class="text-4xl font-black tracking-[6px] uppercase italic"
     style="color: #E63946; text-shadow: 0 0 25px rgba(230,57,70,0.5);
-           animation: fadeInUp 0.5s 0.1s ease-out both">TIME'S UP</h1>
+           animation: fadeInUp 0.5s 0.1s ease-out both">TEMPS ECOULE</h1>
   <p class="font-mono text-[0.6rem] tracking-[5px] text-dim/50 mt-1 mb-7"
-    style="animation: systemBoot 0.6s 0.3s ease-out both">YOU HAVE BEEN DEFEATED</p>
+    style="animation: systemBoot 0.6s 0.3s ease-out both">TU AS ETE VAINCU</p>
 
   <!-- Damage card -->
   <div class="relative w-full bg-surface/80 backdrop-blur-sm border border-primary/15 rounded-lg px-6 py-5 mb-4"
@@ -43,14 +43,14 @@
     <div class="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-primary/30"></div>
 
     <p class="font-mono text-xl font-black text-white">{state.damageDealt}
-      <span class="text-sm text-dim/60 font-normal">/ {state.bossMaxHP} damage</span>
+      <span class="text-sm text-dim/60 font-normal">/ {state.bossMaxHP} degats</span>
     </p>
     <div class="relative h-2 bg-white/[0.06] rounded-sm overflow-hidden mt-3 border border-white/[0.04]">
       <div class="h-full rounded-sm transition-[width] duration-700 ease-out"
         style="width: {pct}%; background: linear-gradient(to right, #A0101A, #E63946);
                box-shadow: 0 0 8px rgba(230,57,70,0.5)"></div>
     </div>
-    <p class="font-mono text-[0.6rem] text-dim/50 tracking-[2px] mt-2 text-right">{pct}% DEALT</p>
+    <p class="font-mono text-[0.6rem] text-dim/50 tracking-[2px] mt-2 text-right">{pct}% INFLIGES</p>
   </div>
 
   <p class="font-mono text-xs tracking-[3px] text-gold/70 mb-8"
@@ -66,7 +66,7 @@
         shadow-[0_0_20px_rgba(230,57,70,0.3)]"
       onclick={onRetry}
     >
-      <span class="inline-block skew-x-[10deg]">⟳ TRY AGAIN</span>
+      <span class="inline-block skew-x-[10deg]">⟳ REESSAYER</span>
     </button>
   </div>
 
@@ -76,7 +76,7 @@
       style="animation: fadeInUp 0.5s 0.55s ease-out both"
       onclick={onEasier}
     >
-      TRY AN EASIER BOSS
+      ESSAYER UN BOSS PLUS FACILE
     </button>
   {/if}
 </div>

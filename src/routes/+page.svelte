@@ -78,7 +78,7 @@
   </h1>
   <p class="font-mono text-[0.65rem] tracking-[7px] text-primary uppercase mt-1.5 mb-9"
     style="animation: systemBoot 0.8s 0.4s ease-out both">
-    ◆ Boss Battles ◆
+    ◆ Combats de Boss ◆
   </p>
 
   <!-- XP Bar -->
@@ -107,7 +107,7 @@
   <!-- Boss Selection -->
   <p class="font-mono text-[0.58rem] tracking-[5px] text-dim/80 uppercase self-start mb-2.5"
     style="animation: fadeInUp 0.5s 0.35s ease-out both">
-    ◆ Choose Your Boss
+    ◆ Choisis ton Boss
   </p>
   <div class="relative w-full mb-7" style="animation: fadeInUp 0.5s 0.4s ease-out both">
     <!-- Corner brackets -->
@@ -132,7 +132,7 @@
 
   <!-- Exercise Picker -->
   <div class="w-full mb-7" style="animation: fadeInUp 0.5s 0.65s ease-out both">
-    <p class="font-mono text-[0.58rem] tracking-[5px] text-dim/80 uppercase mb-2.5">◆ Exercise</p>
+    <p class="font-mono text-[0.58rem] tracking-[5px] text-dim/80 uppercase mb-2.5">◆ Exercice</p>
     <ExercisePicker selected={selectedExercise} onselect={(id) => { selectedExercise = id; }} />
   </div>
 
@@ -147,7 +147,7 @@
         shadow-[0_0_25px_rgba(230,57,70,0.35)]"
       onclick={startFight}
     >
-      <span class="inline-block skew-x-[10deg]">⚔ FIGHT</span>
+      <span class="inline-block skew-x-[10deg]">⚔ COMBATTRE</span>
     </button>
   </div>
 

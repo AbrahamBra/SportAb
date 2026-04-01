@@ -11,7 +11,7 @@
 
   let totalXP = $state(0);
   let playerLevel = $derived(computeLevel(totalXP));
-  let displayName = $state('Warrior');
+  let displayName = $state('Guerrier');
   let battleHistory = $state<BattleRecord[]>([]);
 
   const totalReps   = $derived(battleHistory.reduce((sum, b) => sum + b.reps, 0));
@@ -36,11 +36,11 @@
       const d = new Date(dateStr); const now = new Date();
       const m = Math.floor((now.getTime() - d.getTime()) / 60000);
       const h = Math.floor(m / 60); const day = Math.floor(m / 1440);
-      if (m < 1) return 'Just now';
-      if (m < 60) return `${m}m ago`;
-      if (h < 24) return `${h}h ago`;
-      if (day < 7) return `${day}d ago`;
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (m < 1) return 'A l\'instant';
+      if (m < 60) return `Il y a ${m}min`;
+      if (h < 24) return `Il y a ${h}h`;
+      if (day < 7) return `Il y a ${day}j`;
+      return d.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' });
     } catch { return ''; }
   }
 
@@ -74,7 +74,7 @@
     style="animation: fadeInDown 0.4s ease-out both"
     onclick={() => goto('/')}
   >
-    ← BACK
+    ← RETOUR
   </button>
 
   <!-- System label -->
@@ -82,7 +82,7 @@
     style="animation: systemBoot 0.7s 0.1s ease-out both">
     <span class="w-1.5 h-1.5 rounded-full bg-gold"
       style="animation: statusDot 2s ease-in-out infinite; box-shadow: 0 0 6px rgba(255,209,102,0.8)"></span>
-    <span class="font-mono text-[0.58rem] tracking-[5px] text-gold/60 uppercase">SHADOW_SOLDIER · PROFILE</span>
+    <span class="font-mono text-[0.58rem] tracking-[5px] text-gold/60 uppercase">SHADOW_SOLDIER · PROFIL</span>
   </div>
 
   <!-- Player identity -->
@@ -107,12 +107,12 @@
       <div class="absolute inset-0 flex flex-col items-center justify-center">
         <span class="font-mono font-black text-3xl text-primary leading-none"
           style="text-shadow: 0 0 20px rgba(230,57,70,0.7)">{playerLevel}</span>
-        <span class="font-mono text-[0.5rem] tracking-[3px] text-dim/60 uppercase mt-0.5">LEVEL</span>
+        <span class="font-mono text-[0.5rem] tracking-[3px] text-dim/60 uppercase mt-0.5">NIVEAU</span>
       </div>
     </div>
 
     <h1 class="text-xl font-black tracking-[4px] uppercase italic">{displayName}</h1>
-    <p class="font-mono text-[0.58rem] text-dim/60 tracking-[4px] mt-1 uppercase">◆ Level {playerLevel} Warrior ◆</p>
+    <p class="font-mono text-[0.58rem] text-dim/60 tracking-[4px] mt-1 uppercase">◆ Niveau {playerLevel} Guerrier ◆</p>
   </div>
 
   <!-- XP Bar -->
@@ -130,10 +130,10 @@
 
     <div class="grid grid-cols-2 gap-2.5">
       {#each [
-        { val: totalReps,       label: 'Total Reps',   color: 'text-white',   border: 'border-white/20' },
-        { val: bossesSlain,     label: 'Bosses Slain', color: 'text-primary', border: 'border-primary/40' },
-        { val: `${winRate}%`,   label: 'Win Rate',     color: 'text-gold',    border: 'border-gold/40' },
-        { val: currentStreak(), label: 'Streak',       color: 'text-success', border: 'border-success/40' },
+        { val: totalReps,       label: 'Reps Totales',  color: 'text-white',   border: 'border-white/20' },
+        { val: bossesSlain,     label: 'Boss Vaincus',  color: 'text-primary', border: 'border-primary/40' },
+        { val: `${winRate}%`,   label: 'Taux Victoire', color: 'text-gold',    border: 'border-gold/40' },
+        { val: currentStreak(), label: 'Serie',         color: 'text-success', border: 'border-success/40' },
       ] as stat, i}
         <div class="relative bg-surface/80 border-l-2 {stat.border} rounded-lg px-4 py-4 text-center overflow-hidden -skew-x-[4deg]"
           style="animation: fadeInUp 0.4s {0.05 * i + 0.4}s ease-out both">
@@ -150,11 +150,11 @@
 
   <!-- Battle History -->
   <div class="flex-1" style="animation: fadeInUp 0.5s 0.55s ease-out both">
-    <p class="font-mono text-[0.58rem] tracking-[5px] text-dim/60 uppercase mb-3">◆ Battle History</p>
+    <p class="font-mono text-[0.58rem] tracking-[5px] text-dim/60 uppercase mb-3">◆ Historique des Combats</p>
 
     {#if battleHistory.length === 0}
       <div class="bg-surface/60 border border-white/5 rounded-lg p-6 text-center">
-        <p class="font-mono text-xs text-dim/50 tracking-[2px]">NO BATTLES YET. CHOOSE A BOSS AND FIGHT.</p>
+        <p class="font-mono text-xs text-dim/50 tracking-[2px]">AUCUN COMBAT. CHOISIS UN BOSS ET BATS-TOI.</p>
       </div>
     {:else}
       <div class="flex flex-col gap-2">
@@ -171,7 +171,7 @@
               {record.result === 'victory'
                 ? 'bg-success/15 text-success border border-success/25'
                 : 'bg-primary/15 text-primary border border-primary/25'}">
-              {record.result === 'victory' ? 'WIN' : 'LOSS'}
+              {record.result === 'victory' ? 'V' : 'D'}
             </span>
           </div>
         {/each}

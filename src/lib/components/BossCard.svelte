@@ -49,7 +49,7 @@
           >{boss.name}</span>
         </div>
         <span class="text-xs text-dim font-mono tracking-[1px]">
-          {locked ? `◆ LVL ${boss.requiredLevel} REQUIRED` : meta}
+          {locked ? `◆ NIVEAU ${boss.requiredLevel} REQUIS` : meta}
         </span>
       </div>
 

@@ -8,6 +8,7 @@
   import { initDetector, detectPose, isDetectorReady } from '$lib/ai/pose-detector';
   import { createExerciseDetector, type ExerciseDetector, type Keypoint } from '$lib/ai/exercise-detector';
   import { playSound, preloadSounds } from '$lib/game/audio';
+  import { computeLevel } from '$lib/game/progression';
   import { onVisibilityChange } from '$lib/utils/visibility';
   import { saveBattleState, clearBattleState } from '$lib/utils/local-storage';
   import HPBar from '$lib/components/HPBar.svelte';
@@ -47,12 +48,15 @@
 
   // UI state
   let isLoading = $state(true);
-  let loadingMsg = $state('STARTING CAMERA...');
+  let loadingMsg = $state('DEMARRAGE...');
   let isPaused = $state(false);
   let secsLeft = $state(0);
   let formScore = $state(0);
   let showRepCounter = $state(false);
   let currentReps = $state(0);
+  let countdown = $state(0); // 3-2-1 pre-battle countdown
+  let showLevelUp = $state(false);
+  let levelBefore = 0;
 
   // Canvas / video refs
   let canvasEl: HTMLCanvasElement | undefined = $state();
@@ -248,7 +252,16 @@
       // Save XP to localStorage for guest
       const earned = battleState.xpEarned;
       const currentXP = parseInt(localStorage.getItem('pushquest_xp') ?? '0', 10);
-      localStorage.setItem('pushquest_xp', String(currentXP + earned));
+      const newXP = currentXP + earned;
+      localStorage.setItem('pushquest_xp', String(newXP));
+
+      // Level-up detection
+      const levelAfter = computeLevel(newXP);
+      if (levelAfter > levelBefore) {
+        showLevelUp = true;
+        playSound('levelup');
+        setTimeout(() => { showLevelUp = false; }, 3000);
+      }
 
       // Save battle history
       saveBattleHistory('victory');
@@ -346,7 +359,7 @@
       secsLeft = boss.timeLimitSecs;
 
       // Request camera + load model in parallel
-      loadingMsg = 'STARTING...';
+      loadingMsg = 'DEMARRAGE...';
       try {
         const [stream] = await Promise.all([
           navigator.mediaDevices.getUserMedia({
@@ -359,17 +372,26 @@
         await videoEl.play();
       } catch (e) {
         loadingMsg = (e as Error)?.message?.includes('Permission')
-          ? 'CAMERA DENIED'
-          : 'LOAD FAILED';
+          ? 'CAMERA REFUSEE'
+          : 'ECHEC CHARGEMENT';
         console.error('Init error:', e);
         return;
       }
 
-      // Ready - start game
+      // Ready - run 3-2-1 countdown then start game
       isLoading = false;
-      gameActive = true;
-      startTimer();
-      renderLoop();
+      levelBefore = computeLevel(parseInt(localStorage.getItem('pushquest_xp') ?? '0', 10));
+      countdown = 3;
+      const countdownInterval = setInterval(() => {
+        countdown--;
+        playSound('countdown');
+        if (countdown <= 0) {
+          clearInterval(countdownInterval);
+          gameActive = true;
+          startTimer();
+          renderLoop();
+        }
+      }, 1000);
 
       // Auto-save every 5 seconds
       saveHandle = setInterval(() => {
@@ -414,7 +436,8 @@
 
   {#if isActive || isLoading}
     <!-- Top HUD -->
-    <div class="absolute top-0 left-0 right-0 flex justify-between items-center px-5 pt-[18px] z-10">
+    <div class="absolute top-0 left-0 right-0 flex justify-between items-center px-5 z-10"
+      style="padding-top: calc(18px + var(--safe-top, 0px))">
       <button
         class="w-[34px] h-[34px] rounded-full bg-white/[0.12] border-none text-white text-sm cursor-pointer flex items-center justify-center"
         onclick={closeBattle}
@@ -442,7 +465,8 @@
     <RepCounter count={currentReps} visible={showRepCounter} />
 
     <!-- Bottom HUD -->
-    <div class="absolute bottom-9 left-5 right-5 z-10 flex flex-col gap-2.5">
+    <div class="absolute left-5 right-5 z-10 flex flex-col gap-2.5"
+      style="bottom: calc(36px + var(--safe-bottom, 0px))">
       <FormScoreBar value={formScore} />
       <div class="flex gap-2.5">
         <button
@@ -455,7 +479,7 @@
           class="flex-1 py-3.5 bg-black/50 border-[1.5px] border-primary/60 text-primary font-bold text-xs tracking-[3px] uppercase rounded-[12px] cursor-pointer backdrop-blur-md"
           onclick={fleeGame}
         >
-          FLEE
+          FUIR
         </button>
       </div>
     </div>
@@ -466,24 +490,54 @@
     <div class="absolute inset-0 bg-[rgba(8,8,15,0.92)] flex flex-col items-center justify-center z-30 gap-[18px] loading-grid">
       <div class="w-[38px] h-[38px] border-[3px] border-white/[0.08] border-t-primary rounded-full animate-spin"></div>
       <div class="text-xs tracking-[4px] text-dim">{loadingMsg}</div>
+      {#if loadingMsg === 'CAMERA REFUSEE' || loadingMsg === 'ECHEC CHARGEMENT'}
+        <button
+          class="mt-4 py-3 px-8 bg-primary text-white font-bold rounded-[14px] text-xs tracking-[3px] uppercase
+            hover:bg-primary-hover active:scale-[0.97] transition-all"
+          onclick={closeBattle}
+        >
+          RETOUR
+        </button>
+      {/if}
+    </div>
+  {/if}
+
+  <!-- Countdown Overlay (3-2-1) -->
+  {#if countdown > 0 && !isLoading}
+    <div class="absolute inset-0 bg-[rgba(8,8,15,0.85)] flex items-center justify-center z-[28]">
+      <span class="font-mono text-8xl font-black text-primary"
+        style="text-shadow: 0 0 40px rgba(230,57,70,0.8), 0 0 80px rgba(230,57,70,0.4);
+               animation: repPop 0.8s ease-out both"
+      >{countdown}</span>
+    </div>
+  {/if}
+
+  <!-- Level Up Overlay -->
+  {#if showLevelUp}
+    <div class="absolute top-[15%] left-0 right-0 flex flex-col items-center z-[35] pointer-events-none"
+      style="animation: fadeInUp 0.5s ease-out both">
+      <span class="font-mono text-[0.6rem] tracking-[6px] text-gold/80 uppercase mb-2">NIVEAU SUPERIEUR</span>
+      <span class="text-5xl font-black text-gold"
+        style="text-shadow: 0 0 30px rgba(255,209,102,0.8), 0 0 60px rgba(255,209,102,0.4);
+               animation: repPop 0.8s ease-out both">LEVEL UP!</span>
     </div>
   {/if}
 
   <!-- Pause Overlay -->
   {#if isPaused && isActive}
     <div class="absolute inset-0 bg-[rgba(8,8,15,0.9)] flex flex-col items-center justify-center z-[25] gap-4">
-      <h2 class="text-3xl font-black tracking-[8px]">PAUSED</h2>
+      <h2 class="text-3xl font-black tracking-[8px]">EN PAUSE</h2>
       <button
         class="py-3 px-9 bg-primary text-white font-black rounded-[14px] tracking-[4px] uppercase hover:bg-primary-hover active:scale-[0.98] transition-all"
         onclick={resumeGame}
       >
-        RESUME
+        REPRENDRE
       </button>
       <button
         class="py-3 px-9 bg-transparent border-[1.5px] border-white/25 text-white font-bold text-xs tracking-[3px] rounded-[12px] cursor-pointer"
         onclick={closeBattle}
       >
-        QUIT
+        QUITTER
       </button>
     </div>
   {/if}
