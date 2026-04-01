@@ -345,30 +345,23 @@
       updateBattleState();
       secsLeft = boss.timeLimitSecs;
 
-      // Request camera
-      loadingMsg = 'STARTING CAMERA...';
+      // Request camera + load model in parallel
+      loadingMsg = 'STARTING...';
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-        });
+        const [stream] = await Promise.all([
+          navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+          }),
+          initDetector((msg) => { loadingMsg = msg.toUpperCase(); }),
+        ]);
         if (!videoEl) return;
         videoEl.srcObject = stream;
         await videoEl.play();
       } catch (e) {
-        loadingMsg = 'CAMERA DENIED';
-        console.error('Camera error:', e);
-        return;
-      }
-
-      // Load model
-      loadingMsg = 'LOADING AI...';
-      try {
-        await initDetector((msg) => {
-          loadingMsg = msg.toUpperCase();
-        });
-      } catch (e) {
-        loadingMsg = 'MODEL LOAD FAILED';
-        console.error('Model error:', e);
+        loadingMsg = (e as Error)?.message?.includes('Permission')
+          ? 'CAMERA DENIED'
+          : 'LOAD FAILED';
+        console.error('Init error:', e);
         return;
       }
 
@@ -429,14 +422,20 @@
         ✕
       </button>
       <div class="text-[1.05rem] font-black tracking-[5px] uppercase">{boss.name}</div>
-      <div class="text-[0.95rem] font-bold tracking-[1px] flex items-center gap-1.5 {timerWarning ? 'text-[#ff6b6b]' : 'text-white'}">
+      <div class="font-mono text-[0.95rem] font-bold tracking-[1px] flex items-center gap-1.5 {timerWarning ? 'text-[#ff6b6b]' : 'text-white'}">
         ⏱ {timerDisplay()}
       </div>
     </div>
 
     <!-- HP Bar -->
     <div class="absolute top-[60px] left-5 right-5 z-10">
-      <HPBar current={battleState.bossHP} max={battleState.bossMaxHP} />
+      <div class="relative">
+        <div class="absolute -top-2 -left-2 w-6 h-6 border-t border-l border-primary/40"></div>
+        <div class="absolute -top-2 -right-2 w-6 h-6 border-t border-r border-primary/40"></div>
+        <div class="absolute -bottom-2 -left-2 w-6 h-6 border-b border-l border-primary/40"></div>
+        <div class="absolute -bottom-2 -right-2 w-6 h-6 border-b border-r border-primary/40"></div>
+        <HPBar current={battleState.bossHP} max={battleState.bossMaxHP} />
+      </div>
     </div>
 
     <!-- Rep Counter (center) -->
@@ -447,13 +446,13 @@
       <FormScoreBar value={formScore} />
       <div class="flex gap-2.5">
         <button
-          class="flex-1 py-3.5 bg-black/50 border-[1.5px] border-white/[0.18] text-white font-bold text-xs tracking-[3px] uppercase rounded-[12px] cursor-pointer backdrop-blur-[6px]"
+          class="flex-1 py-3.5 bg-black/50 border-[1.5px] border-white/[0.18] text-white font-bold text-xs tracking-[3px] uppercase rounded-[12px] cursor-pointer backdrop-blur-md"
           onclick={pauseGame}
         >
           PAUSE
         </button>
         <button
-          class="flex-1 py-3.5 bg-black/50 border-[1.5px] border-primary/60 text-primary font-bold text-xs tracking-[3px] uppercase rounded-[12px] cursor-pointer backdrop-blur-[6px]"
+          class="flex-1 py-3.5 bg-black/50 border-[1.5px] border-primary/60 text-primary font-bold text-xs tracking-[3px] uppercase rounded-[12px] cursor-pointer backdrop-blur-md"
           onclick={fleeGame}
         >
           FLEE
@@ -464,7 +463,7 @@
 
   <!-- Loading Overlay -->
   {#if isLoading}
-    <div class="absolute inset-0 bg-[rgba(8,8,15,0.92)] flex flex-col items-center justify-center z-30 gap-[18px]">
+    <div class="absolute inset-0 bg-[rgba(8,8,15,0.92)] flex flex-col items-center justify-center z-30 gap-[18px] loading-grid">
       <div class="w-[38px] h-[38px] border-[3px] border-white/[0.08] border-t-primary rounded-full animate-spin"></div>
       <div class="text-xs tracking-[4px] text-dim">{loadingMsg}</div>
     </div>
@@ -503,3 +502,17 @@
     </div>
   {/if}
 </div>
+
+<style>
+  @keyframes hpCritical {
+    0%, 100% { box-shadow: 0 0 5px rgba(230,57,70,0.3); }
+    50% { box-shadow: 0 0 15px rgba(230,57,70,0.6); }
+  }
+
+  .loading-grid {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+</style>

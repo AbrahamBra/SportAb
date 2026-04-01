@@ -3,12 +3,12 @@ type SoundName = 'rep' | 'warning' | 'victory' | 'defeat' | 'levelup' | 'countdo
 const audioCache = new Map<SoundName, HTMLAudioElement>();
 
 const SOUND_URLS: Record<SoundName, string> = {
-  rep: '/sounds/rep.mp3',
-  warning: '/sounds/warning.mp3',
-  victory: '/sounds/victory.mp3',
-  defeat: '/sounds/defeat.mp3',
-  levelup: '/sounds/levelup.mp3',
-  countdown: '/sounds/countdown.mp3',
+  rep: '/sounds/rep.wav',
+  warning: '/sounds/warning.wav',
+  victory: '/sounds/victory.wav',
+  defeat: '/sounds/defeat.wav',
+  levelup: '/sounds/levelup.wav',
+  countdown: '/sounds/countdown.wav',
 };
 
 export function preloadSounds(): void {

@@ -1,9 +1,10 @@
 import { createServerClient } from '@supabase/ssr';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import type { Cookies } from '@sveltejs/kit';
 
 export function createServerSupabase(cookies: Cookies) {
-  return createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
+  const url = process.env.PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? '';
+  const key = process.env.PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY ?? '';
+  return createServerClient(url, key, {
     cookies: {
       getAll: () => cookies.getAll(),
       setAll: (cookiesToSet) => {
