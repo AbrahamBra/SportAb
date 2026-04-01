@@ -5,32 +5,26 @@
   import { computeLevel, xpForNextLevel, canFightBoss } from '$lib/game/progression';
   import { preloadSounds } from '$lib/game/audio';
   import { initDetector } from '$lib/ai/pose-detector';
-  import Stars from '$lib/components/Stars.svelte';
+  import BackgroundFX from '$lib/components/BackgroundFX.svelte';
   import XPBar from '$lib/components/XPBar.svelte';
   import BossCard from '$lib/components/BossCard.svelte';
   import ExercisePicker from '$lib/components/ExercisePicker.svelte';
 
   let { data } = $props();
 
-  // Player state — guest defaults
   let totalXP = $state(0);
   let playerLevel = $derived(computeLevel(totalXP));
-
-  // Selection state
   let selectedBossId = $state<string>('goblin');
   let selectedExercise = $state<string>('pushup');
-
-  // Loading status for model preload
   let modelStatus = $state<string>('');
+  let visible = $state(false);
 
   function isBossLocked(boss: Boss): boolean {
     return !canFightBoss(playerLevel, boss);
   }
 
   function selectBoss(boss: Boss): void {
-    if (!isBossLocked(boss)) {
-      selectedBossId = boss.id;
-    }
+    if (!isBossLocked(boss)) selectedBossId = boss.id;
   }
 
   function startFight(): void {
@@ -39,81 +33,106 @@
   }
 
   onMount(() => {
-    // Check onboarding
     const onboarded = localStorage.getItem('pushquest_onboarded');
-    if (!onboarded) {
-      goto('/onboarding');
-      return;
-    }
+    if (!onboarded) { goto('/onboarding'); return; }
 
-    // Load XP from localStorage for guest users
     if (!data.session) {
       const saved = localStorage.getItem('pushquest_xp');
-      if (saved) {
-        totalXP = parseInt(saved, 10) || 0;
-      }
+      if (saved) totalXP = parseInt(saved, 10) || 0;
     }
 
-    // Preload sounds
     preloadSounds();
+    initDetector((msg) => { modelStatus = msg; }).catch(() => { modelStatus = ''; });
 
-    // Start preloading TF.js model in background
-    initDetector((msg) => {
-      modelStatus = msg;
-    }).catch(() => {
-      modelStatus = 'Model load failed';
-    });
+    // Trigger entrance
+    requestAnimationFrame(() => { visible = true; });
   });
 </script>
 
-<Stars />
+<BackgroundFX />
 
-<div class="relative z-10 flex flex-col items-center min-h-screen px-6 pt-12 pb-10 max-w-[420px] mx-auto">
+<div class="relative z-10 flex flex-col items-center min-h-screen px-6 pt-10 pb-10 max-w-[420px] mx-auto">
+
+  <!-- System status bar -->
+  <div class="w-full flex items-center gap-2 mb-8 self-start"
+    style="animation: fadeInDown 0.5s ease-out both">
+    <span class="w-1.5 h-1.5 rounded-full bg-primary"
+      style="animation: statusDot 1.5s ease-in-out infinite; box-shadow: 0 0 6px rgba(230,57,70,0.9)"></span>
+    <span class="font-mono text-[0.6rem] tracking-[4px] text-primary/70 uppercase">SYSTEM_ONLINE · v1.0</span>
+  </div>
+
   <!-- Logo -->
-  <h1 class="text-[2.6rem] font-black tracking-[4px] uppercase leading-none" style="text-shadow: 0 0 40px rgba(230,57,70,0.7)">
+  <h1 class="text-[2.8rem] font-black tracking-[5px] uppercase leading-none italic"
+    style="animation: fadeInDown 0.6s 0.05s ease-out both; text-shadow: 0 0 20px rgba(230,57,70,0.55), 0 0 50px rgba(230,57,70,0.25); animation: glitchRed 8s ease-in-out infinite, fadeInDown 0.6s 0.05s ease-out both">
     PushQuest
   </h1>
-  <p class="text-xs tracking-[6px] text-primary uppercase mt-1.5 mb-10">Boss Battles</p>
+  <p class="font-mono text-[0.65rem] tracking-[7px] text-primary uppercase mt-1.5 mb-9"
+    style="animation: systemBoot 0.8s 0.4s ease-out both">
+    ◆ Boss Battles ◆
+  </p>
 
   <!-- XP Bar -->
-  <div class="w-full mb-8">
+  <div class="w-full mb-8" style="animation: fadeInUp 0.5s 0.3s ease-out both">
     <XPBar xp={totalXP} level={playerLevel} />
   </div>
 
   <!-- Boss Selection -->
-  <p class="text-[0.6rem] tracking-[5px] text-dim uppercase self-start mb-2.5">Choose Your Boss</p>
-  <div class="w-full flex flex-col gap-2.5 mb-7">
-    {#each BOSSES as boss}
-      <BossCard
-        {boss}
-        selected={selectedBossId === boss.id}
-        locked={isBossLocked(boss)}
-        onclick={() => selectBoss(boss)}
-      />
-    {/each}
+  <p class="font-mono text-[0.58rem] tracking-[5px] text-dim/80 uppercase self-start mb-2.5"
+    style="animation: fadeInUp 0.5s 0.35s ease-out both">
+    ◆ Choose Your Boss
+  </p>
+  <div class="relative w-full mb-7" style="animation: fadeInUp 0.5s 0.4s ease-out both">
+    <!-- Corner brackets -->
+    <div class="absolute -top-2 -left-2 w-5 h-5 border-t-2 border-l-2 border-primary/50"></div>
+    <div class="absolute -top-2 -right-2 w-5 h-5 border-t-2 border-r-2 border-primary/50"></div>
+    <div class="absolute -bottom-2 -left-2 w-5 h-5 border-b-2 border-l-2 border-primary/50"></div>
+    <div class="absolute -bottom-2 -right-2 w-5 h-5 border-b-2 border-r-2 border-primary/50"></div>
+
+    <div class="flex flex-col gap-2">
+      {#each BOSSES as boss, i}
+        <div style="animation: slideInLeft 0.4s {0.05 * i + 0.45}s ease-out both">
+          <BossCard
+            {boss}
+            selected={selectedBossId === boss.id}
+            locked={isBossLocked(boss)}
+            onclick={() => selectBoss(boss)}
+          />
+        </div>
+      {/each}
+    </div>
   </div>
 
   <!-- Exercise Picker -->
-  <div class="w-full mb-7">
-    <p class="text-[0.6rem] tracking-[5px] text-dim uppercase mb-2.5">Exercise</p>
+  <div class="w-full mb-7" style="animation: fadeInUp 0.5s 0.65s ease-out both">
+    <p class="font-mono text-[0.58rem] tracking-[5px] text-dim/80 uppercase mb-2.5">◆ Exercise</p>
     <ExercisePicker selected={selectedExercise} onselect={(id) => { selectedExercise = id; }} />
   </div>
 
   <!-- Fight Button -->
-  <button
-    class="w-full py-4 bg-primary text-white font-black rounded-[14px] text-[0.95rem] tracking-[4px] uppercase cursor-pointer transition-all hover:bg-primary-hover hover:scale-[1.01] active:scale-[0.98]"
-    onclick={startFight}
-  >
-    FIGHT
-  </button>
+  <div class="w-full relative" style="animation: fadeInUp 0.5s 0.75s ease-out both">
+    <!-- Glow layer -->
+    <div class="absolute inset-0 rounded-[14px] -skew-x-[10deg]"
+      style="background: rgba(230,57,70,0.15); animation: pulseGlow 2.5s ease-in-out infinite;"></div>
+    <button
+      class="relative w-full py-4 bg-primary text-white font-black rounded-[14px] text-[0.95rem] tracking-[5px] uppercase cursor-pointer transition-all
+        hover:bg-primary-hover active:scale-[0.97] -skew-x-[10deg]
+        shadow-[0_0_25px_rgba(230,57,70,0.35)]"
+      onclick={startFight}
+    >
+      <span class="inline-block skew-x-[10deg]">⚔ FIGHT</span>
+    </button>
+  </div>
 
-  <!-- Model status indicator -->
+  <!-- Model status -->
   {#if modelStatus && modelStatus !== 'Ready!'}
-    <p class="text-xs text-dim tracking-[2px] mt-3">{modelStatus}</p>
+    <p class="text-[0.6rem] font-mono text-dim/60 tracking-[2px] mt-3"
+      style="animation: systemBoot 0.5s ease-out both">{modelStatus}</p>
   {/if}
 
   <!-- Profile link -->
-  <a href="/profile" class="mt-6 text-xs text-dim tracking-[2px] hover:text-white/70 transition-colors">
-    PROFILE
+  <a href="/profile"
+    class="mt-7 font-mono text-[0.6rem] text-dim/60 tracking-[4px] hover:text-primary/70 transition-colors uppercase"
+    style="animation: fadeInUp 0.5s 0.9s ease-out both">
+    ◆ PROFILE ◆
   </a>
 </div>
