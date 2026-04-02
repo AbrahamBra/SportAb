@@ -64,6 +64,7 @@
 
     const idx = currentFrame % frames.length;
     const img = frames[idx];
+    if (!img) return;
     const w = Math.round(img.naturalWidth * sprite.scale);
     const h = Math.round(img.naturalHeight * sprite.scale);
     if (canvas.width !== w || canvas.height !== h) {

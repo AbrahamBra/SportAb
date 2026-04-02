@@ -365,18 +365,61 @@
     onError={handleCameraError}
   />
 
+  <!-- Damage Flash Overlay -->
+  {#if showDamageFlash}
+    <div class="absolute inset-0 z-[4] pointer-events-none"
+      style="background: radial-gradient(circle at 50% 30%, rgba(230,57,70,0.3), transparent 70%);
+             animation: damageFlash 0.15s ease-out both;"></div>
+  {/if}
+
   <!-- Boss Sprite -->
   {#if bossSprite && isActive && !isLoading && countdown <= 0}
-    <div class="absolute top-[15%] left-1/2 -translate-x-1/2 z-[3] flex items-center justify-center
-      {bossAnim === 'hurt' ? 'brightness-200' : ''}
-      {bossAnim === 'death' ? 'opacity-80' : ''}"
+    <div class="absolute top-[15%] left-1/2 -translate-x-1/2 z-[3] flex items-center justify-center"
       style="filter: drop-shadow(0 0 20px rgba(230,57,70,0.4)) drop-shadow(0 4px 12px rgba(0,0,0,0.6));
-             transition: filter 0.15s ease-out;">
+             transition: filter 0.15s, transform 0.1s;
+             {hitStopped ? 'filter: brightness(3) drop-shadow(0 0 30px white);' : ''}
+             {bossAnim === 'hurt' ? 'transform: translate(-50%, 0) scale(0.95);' : ''}
+             {bossAnim === 'death' ? 'opacity: 0.6;' : ''}">
       <SpriteAnimator
         sprite={bossSprite}
         animation={bossAnim}
         class="max-h-[35vh]"
       />
+    </div>
+  {/if}
+
+  <!-- Damage Numbers -->
+  {#each damagePopups as popup (popup.id)}
+    <div class="absolute z-[12] pointer-events-none font-black font-mono {popup.color}"
+      style="left: {popup.x}%; top: {popup.y}%;
+             font-size: {popup.value.length > 2 ? '2rem' : '1.5rem'};
+             text-shadow: 0 0 12px currentColor, 0 2px 4px rgba(0,0,0,0.8);
+             animation: dmgPop 0.8s ease-out both;">
+      {popup.value}
+    </div>
+  {/each}
+
+  <!-- Combo Display -->
+  {#if comboCount >= 3 && isActive}
+    <div class="absolute top-[42%] right-4 z-[11] pointer-events-none text-right"
+      style="animation: fadeInUp 0.3s ease-out both;">
+      <div class="font-black text-3xl font-mono {comboColor}"
+        style="text-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+               animation: repPop 0.4s ease-out both;"
+        >{comboCount}x</div>
+      <div class="text-[0.5rem] tracking-[4px] font-bold {comboColor} uppercase opacity-80"
+        >{comboLabel}</div>
+    </div>
+  {/if}
+
+  <!-- Battle Messages (mid-combat) -->
+  {#if battleMessage && isActive}
+    <div class="absolute top-[48%] left-0 right-0 z-[13] pointer-events-none flex justify-center"
+      style="animation: fadeInUp 0.4s ease-out both;">
+      <div class="px-6 py-2 bg-black/60 backdrop-blur-sm border border-primary/40 rounded-lg">
+        <span class="font-black text-lg tracking-[5px] text-primary uppercase"
+          style="text-shadow: 0 0 20px rgba(230,57,70,0.8);">{battleMessage}</span>
+      </div>
     </div>
   {/if}
 
@@ -436,8 +479,31 @@
     </div>
   {/if}
 
+  <!-- Boss Intro Overlay -->
+  {#if showBossIntro}
+    <div class="absolute inset-0 bg-[rgba(8,8,15,0.95)] flex flex-col items-center justify-center z-[29] gap-4">
+      {#if bossSprite}
+        <div style="animation: fadeInUp 0.6s ease-out both;
+                    filter: drop-shadow(0 0 40px rgba(230,57,70,0.6));">
+          <SpriteAnimator sprite={bossSprite} animation="idle" class="max-h-[30vh]" />
+        </div>
+      {/if}
+      <div style="animation: fadeInUp 0.6s ease-out 0.3s both;">
+        <span class="font-mono text-[0.6rem] tracking-[6px] text-primary/60 uppercase">BOSS FIGHT</span>
+      </div>
+      <div style="animation: fadeInUp 0.6s ease-out 0.5s both;">
+        <span class="text-4xl font-black tracking-[8px] uppercase"
+          style="text-shadow: 0 0 30px rgba(230,57,70,0.8), 0 0 60px rgba(230,57,70,0.4);
+                 animation: glitchRed 3s ease-in-out infinite;">{boss.name}</span>
+      </div>
+      <div style="animation: fadeInUp 0.6s ease-out 0.7s both;">
+        <span class="font-mono text-xs text-dim tracking-[3px]">{boss.hp} HP · {Math.floor(boss.timeLimitSecs / 60)} MIN</span>
+      </div>
+    </div>
+  {/if}
+
   <!-- Countdown Overlay -->
-  {#if countdown > 0 && !isLoading}
+  {#if countdown > 0 && !isLoading && !showBossIntro}
     <div class="absolute inset-0 bg-[rgba(8,8,15,0.85)] flex items-center justify-center z-[28]">
       <span class="font-mono text-8xl font-black text-primary"
         style="text-shadow: 0 0 40px rgba(230,57,70,0.8), 0 0 80px rgba(230,57,70,0.4);
@@ -486,5 +552,10 @@
   .loading-grid {
     background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
     background-size: 32px 32px;
+  }
+  @keyframes dmgPop {
+    0%   { opacity: 1; transform: translateY(0) scale(1.3); }
+    60%  { opacity: 1; transform: translateY(-40px) scale(1); }
+    100% { opacity: 0; transform: translateY(-70px) scale(0.8); }
   }
 </style>

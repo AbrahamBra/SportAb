@@ -343,12 +343,12 @@
             <p class="font-mono text-[0.5rem] text-gold/50 tracking-[0.5px] mt-1 italic">{ex.notes}</p>
           {/if}
           <!-- Progression note -->
-          {@const target = getTarget(ex.exerciseId)}
-          {#if target?.progressionNote}
+          {#if getTarget(ex.exerciseId)?.progressionNote}
+            {@const target = getTarget(ex.exerciseId)}
             <p class="font-mono text-[0.5rem] tracking-[1px] mt-1
-              {target.isProgression ? 'text-gold/80' : 'text-dim/50'}"
-              style={target.isProgression ? 'text-shadow: 0 0 6px rgba(255,209,102,0.4)' : ''}>
-              {target.isProgression ? '↑ ' : ''}{target.progressionNote}
+              {target?.isProgression ? 'text-gold/80' : 'text-dim/50'}"
+              style={target?.isProgression ? 'text-shadow: 0 0 6px rgba(255,209,102,0.4)' : ''}>
+              {target?.isProgression ? '↑ ' : ''}{target?.progressionNote}
             </p>
           {/if}
         </div>
