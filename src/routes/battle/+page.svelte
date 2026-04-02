@@ -111,6 +111,39 @@
     animTimer = setTimeout(() => { bossAnim = 'idle'; }, durationMs);
   }
 
+  // === ENEMY CROWD SYSTEM ===
+  const MAX_VISUAL_ENEMIES = 20;
+  const enemyCount = $derived(Math.min(boss.hp, MAX_VISUAL_ENEMIES));
+  const hpPerEnemy = $derived(boss.hp / enemyCount);
+  const aliveCount = $derived(
+    battleState.bossHP <= 0 ? 0 : Math.ceil(battleState.bossHP / hpPerEnemy)
+  );
+  const idleSpriteSrc = $derived(() => {
+    const idle = bossSprite?.animations.idle;
+    if (!idle) return '';
+    return `${idle.folder}/${idle.prefix}1.png`;
+  });
+  // Sprite size based on enemy count
+  const enemySizePx = $derived(
+    enemyCount <= 5 ? 72 : enemyCount <= 10 ? 54 : enemyCount <= 15 ? 44 : 38
+  );
+  // Track recently killed for death animation
+  let dyingSet = $state(new Set<number>());
+  let prevAliveCount = $state(-1);
+
+  $effect(() => {
+    if (prevAliveCount < 0) { prevAliveCount = aliveCount; return; }
+    if (aliveCount < prevAliveCount) {
+      const newDead: number[] = [];
+      for (let i = aliveCount; i < prevAliveCount; i++) newDead.push(i);
+      dyingSet = new Set([...dyingSet, ...newDead]);
+      setTimeout(() => {
+        dyingSet = new Set([...dyingSet].filter(idx => !newDead.includes(idx)));
+      }, 450);
+    }
+    prevAliveCount = aliveCount;
+  });
+
   // Random boss attack (every 8-15s)
   let bossAttackHandle: ReturnType<typeof setInterval> | null = null;
 
@@ -437,19 +470,25 @@
              animation: damageFlash 0.15s ease-out both;"></div>
   {/if}
 
-  <!-- Boss Sprite -->
+  <!-- Enemy Crowd -->
   {#if bossSprite && isActive && !isLoading && countdown <= 0}
-    <div class="absolute top-[15%] left-1/2 -translate-x-1/2 z-[3] flex items-center justify-center"
-      style="filter: drop-shadow(0 0 20px rgba(230,57,70,0.4)) drop-shadow(0 4px 12px rgba(0,0,0,0.6));
-             transition: filter 0.15s, transform 0.1s;
-             {hitStopped ? 'filter: brightness(3) drop-shadow(0 0 30px white);' : ''}
-             {bossAnim === 'hurt' ? 'transform: translate(-50%, 0) scale(0.95);' : ''}
-             {bossAnim === 'death' ? 'opacity: 0.6;' : ''}">
-      <SpriteAnimator
-        sprite={bossSprite}
-        animation={bossAnim}
-        class="max-h-[35vh]"
-      />
+    <div class="absolute top-[13%] left-1/2 -translate-x-1/2 z-[3] flex flex-wrap justify-center items-end gap-1 max-w-[88%]">
+      {#each Array(enemyCount) as _, i}
+        {@const alive = i < aliveCount}
+        {@const dying = dyingSet.has(i)}
+        {#if alive || dying}
+          <img
+            src={idleSpriteSrc()}
+            alt=""
+            class="pointer-events-none"
+            style="height: {enemySizePx}px; image-rendering: pixelated;
+                   filter: {dying ? 'brightness(4) saturate(0)' : bossAnim === 'hurt' && i === aliveCount - 1 ? 'brightness(3) drop-shadow(0 0 12px white)' : 'drop-shadow(0 0 6px rgba(230,57,70,0.35))'};
+                   opacity: {dying ? 0 : 1};
+                   transform: scale({dying ? 0.2 : hitStopped && i === aliveCount - 1 ? 1.15 : 1});
+                   transition: opacity 0.4s ease-out, transform 0.3s ease-out, filter 0.15s;"
+          />
+        {/if}
+      {/each}
     </div>
   {/if}
 
