@@ -81,7 +81,7 @@
   <div class="flex items-center gap-2 mb-6 self-center"
     style="animation: systemBoot 0.7s 0.1s ease-out both">
     <span class="w-1.5 h-1.5 rounded-full bg-gold"
-      style="animation: statusDot 2s ease-in-out infinite; box-shadow: 0 0 6px rgba(255,209,102,0.8)"></span>
+      style="animation: statusDot 2s ease-in-out infinite; box-shadow: 0 0 6px color-mix(in srgb, var(--color-gold) 80%, transparent)"></span>
     <span class="font-mono text-[0.58rem] tracking-[5px] text-gold/60 uppercase">SHADOW_SOLDIER · PROFIL</span>
   </div>
 

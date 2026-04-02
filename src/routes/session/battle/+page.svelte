@@ -106,7 +106,7 @@
       <div class="h-full rounded-sm transition-[width] duration-300 ease-out"
         style="width: {progress}%;
                background: linear-gradient(to right, #B8943F, #FFD166);
-               box-shadow: 0 0 10px rgba(255,209,102,0.5);"></div>
+               box-shadow: 0 0 10px color-mix(in srgb, var(--color-gold) 50%, transparent);"></div>
     </div>
   </div>
 
@@ -124,7 +124,7 @@
 
   <!-- Loading Overlay -->
   {#if isLoading}
-    <div class="absolute inset-0 bg-[rgba(8,8,15,0.92)] flex flex-col items-center justify-center z-30 gap-[18px]">
+    <div class="absolute inset-0 bg-background/[0.92] flex flex-col items-center justify-center z-30 gap-[18px]">
       <div class="w-[38px] h-[38px] border-[3px] border-white/[0.08] border-t-primary rounded-full animate-spin"></div>
       <div class="text-xs tracking-[4px] text-dim">{loadingMsg}</div>
       {#if loadingMsg === 'CAMERA REFUSEE' || loadingMsg === 'ECHEC CHARGEMENT'}
@@ -136,10 +136,10 @@
 
   <!-- Completion overlay -->
   {#if isComplete}
-    <div class="absolute inset-0 bg-[rgba(8,8,15,0.85)] flex flex-col items-center justify-center z-30 gap-3"
+    <div class="absolute inset-0 bg-background/[0.85] flex flex-col items-center justify-center z-30 gap-3"
       style="animation: fadeInUp 0.3s ease-out both">
       <span class="text-5xl font-black text-gold"
-        style="text-shadow: 0 0 30px rgba(255,209,102,0.7)">✓</span>
+        style="text-shadow: 0 0 30px color-mix(in srgb, var(--color-gold) 70%, transparent)">✓</span>
       <span class="font-mono text-[0.7rem] tracking-[4px] text-gold/80 uppercase">SERIE COMPLETE</span>
       <span class="font-mono text-2xl font-black text-white">{currentReps} reps</span>
     </div>

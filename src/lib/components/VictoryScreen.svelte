@@ -3,10 +3,10 @@
   import type { Boss } from '$lib/game/bosses';
   import { shareResult, shareInvite } from '$lib/utils/share';
   import { computeLevel } from '$lib/game/progression';
-  let { state, boss, onClaim }: { state: BattleState; boss: Boss; onClaim: () => void } = $props();
+  let { battleState, boss, onClaim }: { battleState: BattleState; boss: Boss; onClaim: () => void } = $props();
   let sharing = $state(false);
   const playerLevel = $derived(computeLevel(parseInt(localStorage.getItem('pushquest_xp') ?? '0', 10)));
-  const timeLeft = $derived(boss.timeLimitSecs - state.timeElapsedSecs);
+  const timeLeft = $derived(boss.timeLimitSecs - battleState.timeElapsedSecs);
   const fmtTime  = $derived(`${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2,'0')}`);
 </script>
 
@@ -14,27 +14,27 @@
 
   <!-- Background burst rays -->
   <div class="absolute inset-0 pointer-events-none"
-    style="background: radial-gradient(ellipse 60% 40% at 50% 30%, rgba(255,209,102,0.07) 0%, transparent 70%)"></div>
+    style="background: radial-gradient(ellipse 60% 40% at 50% 30%, color-mix(in srgb, var(--color-gold) 7%, transparent) 0%, transparent 70%)"></div>
 
   <!-- System label -->
   <div class="flex items-center gap-2 mb-6" style="animation: systemBoot 0.6s ease-out both">
     <span class="w-1.5 h-1.5 rounded-full bg-gold"
-      style="animation: statusDot 1.5s ease-in-out infinite; box-shadow: 0 0 6px rgba(255,209,102,0.8)"></span>
+      style="animation: statusDot 1.5s ease-in-out infinite; box-shadow: 0 0 6px color-mix(in srgb, var(--color-gold) 80%, transparent)"></span>
     <span class="font-mono text-[0.58rem] tracking-[5px] text-gold/60 uppercase">BOSS_VAINCU</span>
   </div>
 
   <!-- Victory beam line -->
   <div class="w-3/4 h-px mb-5"
-    style="background: linear-gradient(to right, transparent, rgba(255,209,102,0.6), transparent);
+    style="background: linear-gradient(to right, transparent, color-mix(in srgb, var(--color-gold) 60%, transparent), transparent);
            animation: victoryBeam 0.6s 0.1s ease-out both"></div>
 
   <h1 class="text-5xl font-black tracking-[8px] uppercase italic"
-    style="color: #FFD166; text-shadow: 0 0 30px rgba(255,209,102,0.6), 0 0 60px rgba(255,209,102,0.25);
+    style="color: #FFD166; text-shadow: 0 0 30px color-mix(in srgb, var(--color-gold) 60%, transparent), 0 0 60px color-mix(in srgb, var(--color-gold) 25%, transparent);
            animation: fadeInUp 0.5s 0.1s ease-out both">VICTOIRE</h1>
   <p class="font-mono text-[0.6rem] tracking-[6px] text-dim/60 mt-1"
     style="animation: systemBoot 0.6s 0.3s ease-out both">ENNEMI ABATTU</p>
   <p class="text-xl font-black tracking-[4px] text-primary mt-1.5 mb-8 uppercase italic"
-    style="text-shadow: 0 0 15px rgba(230,57,70,0.6); animation: fadeInUp 0.5s 0.2s ease-out both">
+    style="text-shadow: 0 0 15px color-mix(in srgb, var(--color-primary) 60%, transparent); animation: fadeInUp 0.5s 0.2s ease-out both">
     {boss.name}
   </p>
 
@@ -48,15 +48,15 @@
     <div class="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-gold/50"></div>
 
     <p class="font-mono text-5xl font-black"
-      style="color: #FFD166; text-shadow: 0 0 30px rgba(255,209,102,0.7), 0 0 60px rgba(255,209,102,0.25);
-             animation: pulseGlowGold 2s ease-in-out infinite">+{state.xpEarned}</p>
+      style="color: #FFD166; text-shadow: 0 0 30px color-mix(in srgb, var(--color-gold) 70%, transparent), 0 0 60px color-mix(in srgb, var(--color-gold) 25%, transparent);
+             animation: pulseGlowGold 2s ease-in-out infinite">+{battleState.xpEarned}</p>
     <p class="font-mono text-[0.6rem] tracking-[6px] text-dim/60 mt-1 uppercase">XP Gagnes</p>
   </div>
 
   <!-- Stats row -->
   <div class="flex gap-8 mb-10 font-mono text-sm text-dim/70"
     style="animation: fadeInUp 0.5s 0.4s ease-out both">
-    <span>⚡ <strong class="text-white">{state.reps}</strong> reps</span>
+    <span>⚡ <strong class="text-white">{battleState.reps}</strong> reps</span>
     <span>⏱ <strong class="text-white">{fmtTime}</strong> restant</span>
   </div>
 
@@ -68,7 +68,7 @@
       class="relative w-full py-4 font-black rounded-lg tracking-[5px] uppercase transition-all
         active:scale-[0.97] -skew-x-[10deg]
         border border-gold/40 text-gold hover:bg-gold/10"
-      style="text-shadow: 0 0 12px rgba(255,209,102,0.5)"
+      style="text-shadow: 0 0 12px color-mix(in srgb, var(--color-gold) 50%, transparent)"
       onclick={onClaim}
     >
       <span class="inline-block skew-x-[10deg]">◆ RECUPERER ◆</span>
@@ -80,7 +80,7 @@
     <button
       class="flex-1 py-3 bg-surface/80 border border-white/[0.1] text-dim/70 font-bold text-[0.6rem] tracking-[2px] uppercase rounded-lg
         hover:border-primary/40 hover:text-white transition-all -skew-x-3 disabled:opacity-40"
-      onclick={async () => { sharing = true; await shareResult({ boss, state, playerLevel }); sharing = false; }}
+      onclick={async () => { sharing = true; await shareResult({ boss, state: battleState, playerLevel }); sharing = false; }}
       disabled={sharing}
     >
       <span class="inline-block skew-x-3">{sharing ? '...' : '📤 PARTAGER'}</span>

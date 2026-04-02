@@ -71,7 +71,7 @@
       // Parse target reps for AI counting
       const repStr = ex.reps;
       const match = repStr.match(/(\d+)/);
-      aiTargetReps = match ? parseInt(match[1], 10) : 10;
+      aiTargetReps = match?.[1] ? parseInt(match[1], 10) : 10;
       aiReps = 0;
     }
 
@@ -156,8 +156,10 @@
     goto('/');
   }
 
-  onMount(async () => {
+  onMount(() => {
     preloadSounds();
+
+    async function init(): Promise<void> {
     await loadExercises();
     exercisesLoaded = true;
 
@@ -167,7 +169,8 @@
       return;
     }
 
-    program = getProgram(ap.programId);
+    const progId = ap.programId;
+    program = getProgram(progId);
     if (!program) {
       error = 'Programme introuvable';
       return;
@@ -224,6 +227,10 @@
         updateState();
       }
     }, 1000);
+
+    } // end init()
+
+    init();
 
     return () => {
       if (timerHandle) clearInterval(timerHandle);
@@ -409,8 +416,8 @@
 
           <div class="flex flex-col gap-1.5">
             {#each session.exercises as ex, i}
-              {@const isDone = sessionState.logs.some(l => l.exerciseOrder === ex.exerciseOrder && sessionState.logs.filter(ll => ll.exerciseOrder === ex.exerciseOrder).length >= ex.sets)}
-              {@const isCurrent = i === sessionState.currentExerciseIdx}
+              {@const isDone = sessionState ? sessionState.logs.some(l => l.exerciseOrder === ex.exerciseOrder && sessionState!.logs.filter(ll => ll.exerciseOrder === ex.exerciseOrder).length >= ex.sets) : false}
+              {@const isCurrent = sessionState ? i === sessionState.currentExerciseIdx : false}
               <button
                 class="w-full relative backdrop-blur-sm border-l-4 rounded-lg transition-all duration-200 overflow-hidden -skew-x-[10deg]
                   {isDone

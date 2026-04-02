@@ -9,10 +9,16 @@
   import { loadBattleState, type SavedBattleState } from '$lib/utils/local-storage';
   import { getBoss } from '$lib/game/bosses';
   import { getProgram } from '$lib/data';
+  import { getStreaks, getDailyChallenge } from '$lib/game/streaks';
+  import { getBoss as getBossInfo } from '$lib/game/bosses';
+  import { EXERCISES } from '$lib/ai/exercises.config';
   import BackgroundFX from '$lib/components/BackgroundFX.svelte';
   import XPBar from '$lib/components/XPBar.svelte';
   import BossCard from '$lib/components/BossCard.svelte';
   import ExercisePicker from '$lib/components/ExercisePicker.svelte';
+  import DiamondIcon from '$lib/components/icons/DiamondIcon.svelte';
+  import SwordIcon from '$lib/components/icons/SwordIcon.svelte';
+  import PlayIcon from '$lib/components/icons/PlayIcon.svelte';
 
   let { data } = $props();
 
@@ -24,6 +30,8 @@
   let selectedExercise = $state<string>('pushup');
   let modelStatus = $state<string>('');
   let visible = $state(false);
+  let streak = $state(0);
+  let daily = $state<{ bossId: string; exerciseId: string; bossName: string; exerciseName: string } | null>(null);
 
   function isBossLocked(boss: Boss): boolean {
     return !canFightBoss(playerLevel, boss);
@@ -61,6 +69,18 @@
       if (b) savedBattle = { bossName: b.name, bossId: sb.bossId, exerciseType: sb.exerciseType };
     }
 
+    // Load streaks
+    const s = getStreaks();
+    streak = s.currentStreak;
+
+    // Load daily challenge
+    const dc = getDailyChallenge();
+    const dcBoss = getBossInfo(dc.bossId);
+    const dcExercise = EXERCISES[dc.exerciseId];
+    if (dcBoss && dcExercise) {
+      daily = { bossId: dc.bossId, exerciseId: dc.exerciseId, bossName: dcBoss.name, exerciseName: dcExercise.name };
+    }
+
     preloadSounds();
     initDetector((msg) => { modelStatus = msg; }).catch(() => { modelStatus = ''; });
 
@@ -88,12 +108,37 @@
   </h1>
   <p class="font-mono text-[0.65rem] tracking-[7px] text-primary uppercase mt-1.5 mb-9"
     style="animation: systemBoot 0.8s 0.4s ease-out both">
-    ◆ Combats de Boss ◆
+    <DiamondIcon /> Combats de Boss <DiamondIcon />
   </p>
 
   <!-- XP Bar -->
   <div class="w-full mb-8" style="animation: fadeInUp 0.5s 0.3s ease-out both">
     <XPBar xp={totalXP} level={playerLevel} />
+  </div>
+
+  <!-- Streak + Daily Challenge -->
+  <div class="w-full flex gap-2.5 mb-6" style="animation: fadeInUp 0.5s 0.31s ease-out both">
+    <!-- Streak -->
+    <div class="flex-1 bg-surface/70 border border-white/[0.06] rounded-lg px-3 py-3 -skew-x-3">
+      <div class="skew-x-3 text-center">
+        <span class="block text-2xl font-black font-mono {streak > 0 ? 'text-gold' : 'text-dim/40'}"
+          style="{streak > 0 ? 'text-shadow: 0 0 12px color-mix(in srgb, var(--color-gold) 50%, transparent)' : ''}"
+        >{streak > 0 ? '🔥' : '—'} {streak}</span>
+        <span class="text-[0.5rem] text-dim/50 font-mono tracking-[2px] uppercase">
+          {streak === 1 ? 'jour' : 'jours'}
+        </span>
+      </div>
+    </div>
+    <!-- Daily Challenge -->
+    {#if daily}
+      <button class="flex-[2] bg-surface/70 border border-gold/20 rounded-lg px-3 py-3 -skew-x-3 hover:border-gold/40 transition-all"
+        onclick={() => goto(`/battle?boss=${daily!.bossId}&exercise=${daily!.exerciseId}`)}>
+        <div class="skew-x-3 text-left">
+          <span class="block text-[0.5rem] font-mono tracking-[3px] text-gold/60 uppercase mb-0.5">Defi du jour</span>
+          <span class="block text-[0.7rem] font-bold text-white/90 tracking-[1px]">{daily.bossName} · {daily.exerciseName}</span>
+        </div>
+      </button>
+    {/if}
   </div>
 
   <!-- Active Program -->
@@ -108,7 +153,7 @@
         <div class="relative w-full py-3.5 bg-gold/15 border-2 border-gold/40 text-gold font-black rounded-[14px] text-[0.8rem] tracking-[4px] uppercase
           hover:bg-gold/25 active:scale-[0.97] transition-all -skew-x-[8deg]"
           style="text-shadow: 0 0 12px rgba(255,209,102,0.5)">
-          <span class="inline-block skew-x-[8deg]">▶ CONTINUER — {activeProgram.name}</span>
+          <span class="inline-block skew-x-[8deg]"><PlayIcon /> CONTINUER — {activeProgram.name}</span>
         </div>
       </button>
     </div>
@@ -126,7 +171,7 @@
         <div class="relative w-full py-3 bg-primary/15 border-2 border-primary/40 text-primary font-black rounded-[14px] text-[0.75rem] tracking-[3px] uppercase
           hover:bg-primary/25 active:scale-[0.97] transition-all -skew-x-[8deg]"
           style="text-shadow: 0 0 10px rgba(230,57,70,0.4)">
-          <span class="inline-block skew-x-[8deg]">⚔ REPRENDRE — {savedBattle.bossName}</span>
+          <span class="inline-block skew-x-[8deg]"><SwordIcon /> REPRENDRE — {savedBattle.bossName}</span>
         </div>
       </button>
     </div>
@@ -135,7 +180,7 @@
   <!-- Boss Selection -->
   <p class="font-mono text-[0.58rem] tracking-[5px] text-dim/80 uppercase self-start mb-2.5"
     style="animation: fadeInUp 0.5s 0.35s ease-out both">
-    ◆ Choisis ton Boss
+    <DiamondIcon /> Choisis ton Boss
   </p>
   <div class="relative w-full mb-7" style="animation: fadeInUp 0.5s 0.4s ease-out both">
     <!-- Corner brackets -->
@@ -160,7 +205,7 @@
 
   <!-- Exercise Picker -->
   <div class="w-full mb-7" style="animation: fadeInUp 0.5s 0.65s ease-out both">
-    <p class="font-mono text-[0.58rem] tracking-[5px] text-dim/80 uppercase mb-2.5">◆ Exercice</p>
+    <p class="font-mono text-[0.58rem] tracking-[5px] text-dim/80 uppercase mb-2.5"><DiamondIcon /> Exercice</p>
     <ExercisePicker selected={selectedExercise} onselect={(id) => { selectedExercise = id; }} />
   </div>
 
@@ -175,12 +220,12 @@
         shadow-[0_0_25px_rgba(230,57,70,0.35)]"
       onclick={startFight}
     >
-      <span class="inline-block skew-x-[10deg]">⚔ COMBATTRE</span>
+      <span class="inline-block skew-x-[10deg]"><SwordIcon /> COMBATTRE</span>
     </button>
   </div>
 
   <!-- Model status -->
-  {#if modelStatus && modelStatus !== 'Ready!'}
+  {#if modelStatus && modelStatus !== 'Pret !'}
     <p class="text-[0.6rem] font-mono text-dim/60 tracking-[2px] mt-3"
       style="animation: systemBoot 0.5s ease-out both">{modelStatus}</p>
   {/if}
@@ -189,15 +234,21 @@
   <div class="flex gap-4 flex-wrap justify-center mt-7" style="animation: fadeInUp 0.5s 0.9s ease-out both">
     <a href="/programs"
       class="font-mono text-[0.6rem] text-dim/60 tracking-[4px] hover:text-primary/70 transition-colors uppercase">
-      ◆ PROGRAMMES ◆
+      <DiamondIcon /> PROGRAMMES <DiamondIcon />
     </a>
     <a href="/friends"
       class="font-mono text-[0.6rem] text-dim/60 tracking-[4px] hover:text-gold/70 transition-colors uppercase">
-      ◆ AMIS ◆
+      <DiamondIcon /> AMIS <DiamondIcon />
     </a>
     <a href="/profile"
       class="font-mono text-[0.6rem] text-dim/60 tracking-[4px] hover:text-primary/70 transition-colors uppercase">
-      ◆ PROFILE ◆
+      <DiamondIcon /> PROFIL <DiamondIcon />
     </a>
   </div>
+
+  <!-- Legal -->
+  <a href="/legal" class="font-mono text-[0.45rem] text-dim/30 tracking-[2px] mt-6 hover:text-dim/50 transition-colors uppercase"
+    style="animation: fadeInUp 0.5s 1s ease-out both">
+    Confidentialite · CGU
+  </a>
 </div>

@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { BattleState } from '$lib/game/battle-engine';
   import type { Boss } from '$lib/game/bosses';
-  let { state, boss, onRetry, onEasier }: {
-    state: BattleState; boss: Boss; onRetry: () => void; onEasier?: () => void;
+  let { battleState, boss, onRetry, onEasier }: {
+    battleState: BattleState; boss: Boss; onRetry: () => void; onEasier?: () => void;
   } = $props();
-  const pct = $derived(Math.round((state.damageDealt / state.bossMaxHP) * 100));
+  const pct = $derived(Math.round((battleState.damageDealt / battleState.bossMaxHP) * 100));
   const encouragement = $derived(
     pct >= 80 ? 'SI PRES. ENCORE UN ESSAI.' : pct >= 50 ? 'BEL EFFORT. CONTINUE.' : 'CHAQUE REP COMPTE. RELEVE-TOI.'
   );
@@ -14,22 +14,22 @@
 
   <!-- Dark vignette -->
   <div class="absolute inset-0 pointer-events-none"
-    style="background: radial-gradient(ellipse 60% 40% at 50% 20%, rgba(230,57,70,0.06) 0%, transparent 70%)"></div>
+    style="background: radial-gradient(ellipse 60% 40% at 50% 20%, color-mix(in srgb, var(--color-primary) 6%, transparent) 0%, transparent 70%)"></div>
 
   <!-- System label -->
   <div class="flex items-center gap-2 mb-6" style="animation: systemBoot 0.6s ease-out both">
     <span class="w-1.5 h-1.5 rounded-full bg-primary"
-      style="animation: statusDot 0.8s ease-in-out infinite; box-shadow: 0 0 6px rgba(230,57,70,0.8)"></span>
+      style="animation: statusDot 0.8s ease-in-out infinite; box-shadow: 0 0 6px color-mix(in srgb, var(--color-primary) 80%, transparent)"></span>
     <span class="font-mono text-[0.58rem] tracking-[5px] text-primary/60 uppercase">COMBAT_ECHOUE</span>
   </div>
 
   <!-- Defeat line -->
   <div class="w-3/4 h-px mb-5"
-    style="background: linear-gradient(to right, transparent, rgba(230,57,70,0.5), transparent);
+    style="background: linear-gradient(to right, transparent, color-mix(in srgb, var(--color-primary) 50%, transparent), transparent);
            animation: victoryBeam 0.6s 0.1s ease-out both"></div>
 
   <h1 class="text-4xl font-black tracking-[6px] uppercase italic"
-    style="color: #E63946; text-shadow: 0 0 25px rgba(230,57,70,0.5);
+    style="color: #E63946; text-shadow: 0 0 25px color-mix(in srgb, var(--color-primary) 50%, transparent);
            animation: fadeInUp 0.5s 0.1s ease-out both">TEMPS ECOULE</h1>
   <p class="font-mono text-[0.6rem] tracking-[5px] text-dim/50 mt-1 mb-7"
     style="animation: systemBoot 0.6s 0.3s ease-out both">TU AS ETE VAINCU</p>
@@ -42,13 +42,13 @@
     <div class="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-primary/30"></div>
     <div class="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-primary/30"></div>
 
-    <p class="font-mono text-xl font-black text-white">{state.damageDealt}
-      <span class="text-sm text-dim/60 font-normal">/ {state.bossMaxHP} degats</span>
+    <p class="font-mono text-xl font-black text-white">{battleState.damageDealt}
+      <span class="text-sm text-dim/60 font-normal">/ {battleState.bossMaxHP} degats</span>
     </p>
     <div class="relative h-2 bg-white/[0.06] rounded-sm overflow-hidden mt-3 border border-white/[0.04]">
       <div class="h-full rounded-sm transition-[width] duration-700 ease-out"
         style="width: {pct}%; background: linear-gradient(to right, #A0101A, #E63946);
-               box-shadow: 0 0 8px rgba(230,57,70,0.5)"></div>
+               box-shadow: 0 0 8px color-mix(in srgb, var(--color-primary) 50%, transparent)"></div>
     </div>
     <p class="font-mono text-[0.6rem] text-dim/50 tracking-[2px] mt-2 text-right">{pct}% INFLIGES</p>
   </div>
@@ -59,11 +59,11 @@
   <!-- Try Again -->
   <div class="w-full relative mb-3" style="animation: fadeInUp 0.5s 0.45s ease-out both">
     <div class="absolute inset-0 -skew-x-[10deg] rounded-lg"
-      style="background: rgba(230,57,70,0.1); animation: pulseGlow 2.5s ease-in-out infinite"></div>
+      style="background: color-mix(in srgb, var(--color-primary) 10%, transparent); animation: pulseGlow 2.5s ease-in-out infinite"></div>
     <button
       class="relative w-full py-4 bg-primary/90 text-white font-black rounded-lg tracking-[5px] uppercase
         hover:bg-primary active:scale-[0.97] transition-all -skew-x-[10deg]
-        shadow-[0_0_20px_rgba(230,57,70,0.3)]"
+        shadow-[0_0_20px_color-mix(in srgb, var(--color-primary) 30%, transparent)]"
       onclick={onRetry}
     >
       <span class="inline-block skew-x-[10deg]">⟳ REESSAYER</span>

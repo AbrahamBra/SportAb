@@ -17,14 +17,16 @@
   const split = $derived(program ? SPLIT_INFO[program.split] : null);
 
   onMount(async () => {
-    const id = page.params.id;
+    const id = page.params.id as string | undefined;
+    if (!id) { goto('/programs'); return; }
     program = getProgram(id);
     if (!program) { goto('/programs'); return; }
     await loadExercises();
     exercisesLoaded = true;
     // Auto-expand first phase
-    if (program.phases.length > 0) {
-      expandedPhase = program.phases[0].id;
+    const firstPhase = program.phases[0];
+    if (firstPhase) {
+      expandedPhase = firstPhase.id;
     }
   });
 
@@ -64,7 +66,7 @@
       </a>
       <div class="flex items-center gap-2">
         <span class="w-1.5 h-1.5 rounded-full bg-primary"
-          style="animation: statusDot 1.5s ease-in-out infinite; box-shadow: 0 0 6px rgba(230,57,70,0.9)"></span>
+          style="animation: statusDot 1.5s ease-in-out infinite; box-shadow: 0 0 6px color-mix(in srgb, var(--color-primary) 90%, transparent)"></span>
         <span class="font-mono text-[0.6rem] tracking-[4px] text-primary/70 uppercase">{goal?.label}</span>
       </div>
     </div>
@@ -72,7 +74,7 @@
     <!-- Program Header -->
     <div class="w-full mb-6" style="animation: fadeInDown 0.6s 0.05s ease-out both">
       <h1 class="text-[1.6rem] font-black tracking-[3px] uppercase leading-none italic mb-2"
-        style="text-shadow: 0 0 20px rgba(230,57,70,0.55)">
+        style="text-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 55%, transparent)">
         {program.name}
       </h1>
       <p class="text-[0.65rem] text-dim/70 font-mono tracking-[0.5px] leading-relaxed mb-3">
@@ -83,19 +85,19 @@
       <div class="flex gap-3" style="animation: fadeInUp 0.5s 0.2s ease-out both">
         <div class="flex-1 bg-surface/70 backdrop-blur-sm border border-white/[0.06] rounded-lg px-3 py-2.5 -skew-x-3">
           <div class="skew-x-3 text-center">
-            <span class="block text-primary font-black text-lg" style="text-shadow: 0 0 10px rgba(230,57,70,0.5)">{program.daysPerWeek}</span>
+            <span class="block text-primary font-black text-lg" style="text-shadow: 0 0 10px color-mix(in srgb, var(--color-primary) 50%, transparent)">{program.daysPerWeek}</span>
             <span class="text-[0.5rem] text-dim/50 font-mono tracking-[2px] uppercase">jours/sem</span>
           </div>
         </div>
         <div class="flex-1 bg-surface/70 backdrop-blur-sm border border-white/[0.06] rounded-lg px-3 py-2.5 -skew-x-3">
           <div class="skew-x-3 text-center">
-            <span class="block text-primary font-black text-lg" style="text-shadow: 0 0 10px rgba(230,57,70,0.5)">{program.durationWeeks}</span>
+            <span class="block text-primary font-black text-lg" style="text-shadow: 0 0 10px color-mix(in srgb, var(--color-primary) 50%, transparent)">{program.durationWeeks}</span>
             <span class="text-[0.5rem] text-dim/50 font-mono tracking-[2px] uppercase">semaines</span>
           </div>
         </div>
         <div class="flex-1 bg-surface/70 backdrop-blur-sm border border-white/[0.06] rounded-lg px-3 py-2.5 -skew-x-3">
           <div class="skew-x-3 text-center">
-            <span class="block text-primary font-black text-lg" style="text-shadow: 0 0 10px rgba(230,57,70,0.5)">{split?.label}</span>
+            <span class="block text-primary font-black text-lg" style="text-shadow: 0 0 10px color-mix(in srgb, var(--color-primary) 50%, transparent)">{split?.label}</span>
             <span class="text-[0.5rem] text-dim/50 font-mono tracking-[2px] uppercase">split</span>
           </div>
         </div>
@@ -131,7 +133,7 @@
               <button
                 class="w-full relative backdrop-blur-sm border-l-4 rounded-lg transition-all duration-200 overflow-hidden -skew-x-[12deg]
                   {expandedPhase === phase.id
-                    ? 'bg-surface/90 border-primary border-y border-r border-white/10 shadow-[0_0_15px_rgba(230,57,70,0.2)]'
+                    ? 'bg-surface/90 border-primary border-y border-r border-white/10 shadow-[0_0_15px_color-mix(in srgb, var(--color-primary) 20%, transparent)]'
                     : 'bg-surface/60 border-white/15 border-y border-r border-white/[0.05] hover:border-primary/40 hover:bg-surface/80'}"
                 onclick={() => togglePhase(phase.id)}
               >
@@ -227,11 +229,11 @@
     {#if program.isFree}
       <div class="w-full relative" style="animation: fadeInUp 0.5s 0.7s ease-out both">
         <div class="absolute inset-0 rounded-[14px] -skew-x-[10deg]"
-          style="background: rgba(230,57,70,0.15); animation: pulseGlow 2.5s ease-in-out infinite;"></div>
+          style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); animation: pulseGlow 2.5s ease-in-out infinite;"></div>
         <button
           class="relative w-full py-4 bg-primary text-white font-black rounded-[14px] text-[0.95rem] tracking-[5px] uppercase cursor-pointer transition-all
             hover:bg-primary-hover active:scale-[0.97] -skew-x-[10deg]
-            shadow-[0_0_25px_rgba(230,57,70,0.35)]"
+            shadow-[0_0_25px_color-mix(in srgb, var(--color-primary) 35%, transparent)]"
           onclick={() => {
             if (!program) return;
             setActiveProgram({
@@ -252,7 +254,7 @@
         <button
           class="relative w-full py-4 bg-gold/20 border-2 border-gold/40 text-gold font-black rounded-[14px] text-[0.85rem] tracking-[4px] uppercase cursor-pointer transition-all
             hover:bg-gold/30 -skew-x-[10deg]"
-          style="text-shadow: 0 0 12px rgba(255,209,102,0.5)"
+          style="text-shadow: 0 0 12px color-mix(in srgb, var(--color-gold) 50%, transparent)"
         >
           <span class="inline-block skew-x-[10deg]">⬡ PREMIUM - BIENTOT</span>
         </button>

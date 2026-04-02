@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import CloseIcon from '$lib/components/icons/CloseIcon.svelte';
 
   let show = $state(false);
   let deferredPrompt: any = null;
@@ -55,7 +56,7 @@
       <button
         class="shrink-0 text-dim/30 hover:text-dim/60 transition-colors text-sm"
         onclick={dismiss}
-      >✕</button>
+      ><CloseIcon /></button>
     </div>
   </div>
 {/if}

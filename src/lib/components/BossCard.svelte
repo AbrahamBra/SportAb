@@ -18,7 +18,7 @@
   class="w-full relative group transition-all select-none text-left"
   onclick={locked ? undefined : onclick}
   disabled={locked}
-  style="animation: slideInLeft 0.4s ease-out both"
+  style="container-type: inline-size; animation: slideInLeft 0.4s ease-out both"
 >
   <!-- Glow layer (selected only) -->
   {#if selected}
@@ -40,7 +40,7 @@
         bg-[linear-gradient(rgba(230,57,70,0.04)_1px,transparent_1px)] bg-[size:100%_4px] pointer-events-none"></div>
     {/if}
 
-    <div class="skew-x-[12deg] flex items-center justify-between px-4 py-3.5">
+    <div class="boss-card-inner skew-x-[12deg] flex items-center justify-between px-4 py-3.5">
       <!-- Sprite thumbnail -->
       {#if sprite && !locked}
         <div class="w-12 h-12 flex-shrink-0 mr-3 flex items-center justify-center overflow-hidden"
@@ -79,3 +79,17 @@
     </div>
   </div>
 </button>
+
+<style>
+  @container (max-width: 300px) {
+    .boss-card-inner {
+      padding: 0.5rem;
+    }
+    .boss-card-inner :global(.text-sm) {
+      font-size: 0.75rem;
+    }
+    .boss-card-inner :global(.text-2xl) {
+      font-size: 1.25rem;
+    }
+  }
+</style>

@@ -10,13 +10,18 @@
   import { onVisibilityChange } from '$lib/utils/visibility';
   import { saveBattleState, loadBattleState, clearBattleState } from '$lib/utils/local-storage';
   import { getBossSprite, type AnimationType } from '$lib/game/sprite-config';
+  import { updateStreak } from '$lib/game/streaks';
+  import { checkAndUpdatePR } from '$lib/game/records';
   import CameraDetection from '$lib/components/CameraDetection.svelte';
   import SpriteAnimator from '$lib/components/SpriteAnimator.svelte';
+  import ParticleBurst from '$lib/components/ParticleBurst.svelte';
   import HPBar from '$lib/components/HPBar.svelte';
   import RepCounter from '$lib/components/RepCounter.svelte';
   import FormScoreBar from '$lib/components/FormScoreBar.svelte';
   import VictoryScreen from '$lib/components/VictoryScreen.svelte';
   import DefeatScreen from '$lib/components/DefeatScreen.svelte';
+  import CloseIcon from '$lib/components/icons/CloseIcon.svelte';
+  import TimerIcon from '$lib/components/icons/TimerIcon.svelte';
 
   // URL params
   const bossId = $derived(page.url.searchParams.get('boss') ?? 'goblin');
@@ -81,6 +86,19 @@
 
   // Damage flash overlay
   let showDamageFlash = $state(false);
+
+  // Ceremony delay — brief pause before showing victory/defeat
+  let showResult = $state(false);
+
+  // Personal record tracking
+  let newPR = $state<'reps' | 'time' | 'both' | null>(null);
+
+  // Particle system ref
+  let particleBurst: ParticleBurst;
+
+  // Form audio warning throttle
+  let lastFormWarningTime = 0;
+  const FORM_WARNING_COOLDOWN_MS = 5000;
 
   // Boss sprite
   const bossSprite = $derived(getBossSprite(bossId));
@@ -156,15 +174,17 @@
     updateBattleState();
     currentReps = battleState.reps;
 
-    // 1. Pitched sound (variety)
-    playSoundPitched('rep', [0.85, 1.15]);
+    // 1. Pitched sound — escalates with combo (higher pitch = more momentum)
+    const basePitch = 0.85 + comboTier * 0.08;
+    playSoundPitched('rep', [basePitch, basePitch + 0.3]);
 
     // 2. Haptic feedback (Android)
     vibrate(comboTier >= 2 ? [30, 20, 30] : 40);
 
-    // 3. Hit stop — freeze 50ms
+    // 3. Hit stop — freeze scales with combo (80ms → 180ms)
     hitStopped = true;
-    setTimeout(() => { hitStopped = false; }, 50);
+    const hitStopMs = comboTier >= 3 ? 180 : comboTier >= 2 ? 120 : 80;
+    setTimeout(() => { hitStopped = false; }, hitStopMs);
 
     // 4. Boss hurt animation
     playBossAnim('hurt', 400);
@@ -191,12 +211,17 @@
     const dmgValue = isCritical ? `-${1 + comboTier}` : '-1';
     spawnDamageNumber(dmgValue, isCritical ? 'text-gold' : 'text-white');
 
-    // 9. Rep pop
+    // 9. Particle burst at boss position
+    if (particleBurst) {
+      particleBurst.burst(0.5, 0.28, comboTier >= 2 ? comboTier : 1);
+    }
+
+    // 10. Rep pop
     showRepCounter = true;
     if (repPopTimer) clearTimeout(repPopTimer);
     repPopTimer = setTimeout(() => { showRepCounter = false; }, 750);
 
-    // 10. Milestone messages
+    // 11. Milestone messages
     checkMilestoneMessages();
 
     if (battleState.result === 'victory') {
@@ -207,7 +232,18 @@
   }
 
   function handleFormUpdate(score: number): void {
+    const prevScore = formScore;
     formScore = score;
+
+    // Audio warning when form drops below 40% (throttled to every 5s)
+    if (score < 40 && prevScore >= 40 && cameraActive) {
+      const now = Date.now();
+      if (now - lastFormWarningTime > FORM_WARNING_COOLDOWN_MS) {
+        lastFormWarningTime = now;
+        playSoundPitched('warning', [1.2, 1.4]); // high-pitched = form alert
+        vibrate([50, 30, 50]);
+      }
+    }
   }
 
   function handleCameraReady(): void {
@@ -229,8 +265,9 @@
       }
     }
 
-    // Boss intro (2s) → then countdown
+    // Boss intro (3.5s) → then countdown
     showBossIntro = true;
+    playSound('countdown');
     setTimeout(() => {
       showBossIntro = false;
 
@@ -245,7 +282,7 @@
           startTimer();
         }
       }, 1000);
-    }, 2000);
+    }, 3500);
   }
 
   function handleCameraError(msg: string): void {
@@ -259,14 +296,16 @@
       if (isPaused || !cameraActive) return;
       secsLeft--;
       if (battle) { battle.tick(); updateBattleState(); }
-      if (secsLeft <= 30 && secsLeft > 0) playSound('warning');
+      if (secsLeft === 30 || secsLeft === 10 || secsLeft === 5) playSound('warning');
       if (secsLeft <= 0) endBattle('defeat');
     }, 1000);
 
-    // Random boss attacks (visual only, every 8-15s)
+    // Random boss attacks (visual + audio, every 8-15s)
     bossAttackHandle = setInterval(() => {
       if (isPaused || !cameraActive || battleState.result !== 'active') return;
       playBossAnim('attack', 800);
+      playSoundPitched('warning', [0.5, 0.65]); // low-pitched growl effect
+      vibrate([20, 40, 20]);
     }, 8000 + Math.random() * 7000);
 
     // Auto-save
@@ -281,24 +320,49 @@
     cameraActive = false;
     if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
     if (saveHandle) { clearInterval(saveHandle); saveHandle = null; }
+    if (bossAttackHandle) { clearInterval(bossAttackHandle); bossAttackHandle = null; }
     clearBattleState();
+
+    // Update streak on any battle completion
+    updateStreak();
 
     if (result === 'victory') {
       if (battle) updateBattleState();
-      playSound('victory');
-      const earned = battleState.xpEarned;
-      const currentXP = parseInt(localStorage.getItem('pushquest_xp') ?? '0', 10);
-      const newXP = currentXP + earned;
-      localStorage.setItem('pushquest_xp', String(newXP));
-      const levelAfter = computeLevel(newXP);
-      if (levelAfter > levelBefore) {
-        showLevelUp = true; playSound('levelup');
-        setTimeout(() => { showLevelUp = false; }, 3000);
-      }
+
+      // Check personal records
+      const timeSecs = boss.timeLimitSecs - secsLeft;
+      newPR = checkAndUpdatePR(bossId, battleState.reps, timeSecs, true);
+
+      // Ceremony: 600ms silence before victory reveal
+      setTimeout(() => {
+        playSound('victory');
+        showResult = true;
+
+        const earned = battleState.xpEarned;
+        const currentXP = parseInt(localStorage.getItem('pushquest_xp') ?? '0', 10);
+        const newXP = currentXP + earned;
+        localStorage.setItem('pushquest_xp', String(newXP));
+        const levelAfter = computeLevel(newXP);
+        if (levelAfter > levelBefore) {
+          showLevelUp = true; playSound('levelup');
+          setTimeout(() => { showLevelUp = false; }, 3000);
+        }
+        if (newPR) {
+          playSoundPitched('levelup', [1.2, 1.4]);
+        }
+      }, 600);
       saveBattleHistory('victory');
     } else {
       if (battle) { battle.timeUp(); updateBattleState(); }
-      playSound('defeat');
+
+      // Check rep record even on defeat
+      checkAndUpdatePR(bossId, battleState.reps, 0, false);
+
+      // Ceremony: 400ms pause before defeat reveal
+      setTimeout(() => {
+        playSound('defeat');
+        showResult = true;
+      }, 400);
       saveBattleHistory('defeat');
     }
   }
@@ -306,7 +370,7 @@
   function saveBattleHistory(result: string): void {
     try {
       const history = JSON.parse(localStorage.getItem('pushquest_history') ?? '[]');
-      history.unshift({ bossId: boss.id, bossName: boss.name, result, reps: battleState.reps, date: new Date().toISOString() });
+      history.unshift({ bossId: boss.id, bossName: boss.name, exerciseType, result, reps: battleState.reps, date: new Date().toISOString() });
       if (history.length > 50) history.length = 50;
       localStorage.setItem('pushquest_history', JSON.stringify(history));
     } catch {}
@@ -329,6 +393,7 @@
 
   function cleanup(): void {
     cameraActive = false;
+    showResult = false;
     if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
     if (saveHandle) { clearInterval(saveHandle); saveHandle = null; }
     if (repPopTimer) { clearTimeout(repPopTimer); repPopTimer = null; }
@@ -388,12 +453,15 @@
     </div>
   {/if}
 
+  <!-- Particle System -->
+  <ParticleBurst bind:this={particleBurst} />
+
   <!-- Damage Numbers -->
   {#each damagePopups as popup (popup.id)}
     <div class="absolute z-[12] pointer-events-none font-black font-mono {popup.color}"
       style="left: {popup.x}%; top: {popup.y}%;
-             font-size: {popup.value.length > 2 ? '2rem' : '1.5rem'};
-             text-shadow: 0 0 12px currentColor, 0 2px 4px rgba(0,0,0,0.8);
+             font-size: {popup.color === 'text-gold' ? '2.8rem' : '2rem'};
+             text-shadow: 0 0 16px currentColor, 0 0 32px currentColor, 0 2px 6px rgba(0,0,0,0.9);
              animation: dmgPop 0.8s ease-out both;">
       {popup.value}
     </div>
@@ -432,10 +500,11 @@
     <div class="absolute top-0 left-0 right-0 flex justify-between items-center px-5 z-10"
       style="padding-top: calc(18px + var(--safe-top, 0px))">
       <button class="w-[38px] h-[38px] rounded-full bg-white/[0.12] border-none text-white text-sm cursor-pointer flex items-center justify-center"
-        onclick={closeBattle}>✕</button>
+        onclick={closeBattle} aria-label="Fermer le combat"><CloseIcon /></button>
       <div class="text-[1.05rem] font-black tracking-[5px] uppercase">{boss.name}</div>
-      <div class="font-mono text-[0.95rem] font-bold tracking-[1px] flex items-center gap-1.5 {timerWarning ? 'text-primary' : 'text-white'}">
-        ⏱ {timerDisplay()}
+      <div class="font-mono text-[0.95rem] font-bold tracking-[1px] flex items-center gap-1.5 {timerWarning ? 'text-primary' : 'text-white'}"
+        role="timer" aria-live="off" aria-label="Temps restant">
+        <TimerIcon /> {timerDisplay()}
       </div>
     </div>
 
@@ -460,9 +529,9 @@
       <p class="text-[0.45rem] text-dim/30 font-mono text-center tracking-[0.5px]">Detection approximative — ajuste tes reps si besoin</p>
       <div class="flex gap-2.5">
         <button class="flex-1 py-3.5 bg-black/50 border-[1.5px] border-white/[0.18] text-white font-bold text-xs tracking-[3px] uppercase rounded-[12px] cursor-pointer backdrop-blur-md"
-          onclick={pauseGame}>PAUSE</button>
+          onclick={pauseGame} aria-label="Mettre en pause">PAUSE</button>
         <button class="flex-1 py-3.5 bg-black/50 border-[1.5px] border-primary/60 text-primary font-bold text-xs tracking-[3px] uppercase rounded-[12px] cursor-pointer backdrop-blur-md"
-          onclick={fleeGame}>FUIR</button>
+          onclick={fleeGame} aria-label="Fuir le combat">FUIR</button>
       </div>
     </div>
   {/if}
@@ -481,23 +550,29 @@
 
   <!-- Boss Intro Overlay -->
   {#if showBossIntro}
-    <div class="absolute inset-0 bg-[rgba(8,8,15,0.95)] flex flex-col items-center justify-center z-[29] gap-4">
+    <div class="absolute inset-0 bg-[rgba(8,8,15,0.95)] flex flex-col items-center justify-center z-[29] gap-5">
+      <!-- Beat 1: Sprite reveal (0-1s) -->
       {#if bossSprite}
-        <div style="animation: fadeInUp 0.6s ease-out both;
+        <div style="animation: fadeInUp 0.8s ease-out both;
                     filter: drop-shadow(0 0 40px rgba(230,57,70,0.6));">
           <SpriteAnimator sprite={bossSprite} animation="idle" class="max-h-[30vh]" />
         </div>
       {/if}
-      <div style="animation: fadeInUp 0.6s ease-out 0.3s both;">
-        <span class="font-mono text-[0.6rem] tracking-[6px] text-primary/60 uppercase">BOSS FIGHT</span>
+      <!-- Beat 2: Title (0.8-2s) -->
+      <div style="animation: fadeInUp 0.6s ease-out 0.8s both;">
+        <span class="font-mono text-[0.55rem] tracking-[6px] text-primary/50 uppercase">BOSS FIGHT</span>
       </div>
-      <div style="animation: fadeInUp 0.6s ease-out 0.5s both;">
-        <span class="text-4xl font-black tracking-[8px] uppercase"
+      <div style="animation: fadeInUp 0.7s ease-out 1.2s both;">
+        <span class="text-5xl font-black tracking-[8px] uppercase"
           style="text-shadow: 0 0 30px rgba(230,57,70,0.8), 0 0 60px rgba(230,57,70,0.4);
                  animation: glitchRed 3s ease-in-out infinite;">{boss.name}</span>
       </div>
-      <div style="animation: fadeInUp 0.6s ease-out 0.7s both;">
-        <span class="font-mono text-xs text-dim tracking-[3px]">{boss.hp} HP · {Math.floor(boss.timeLimitSecs / 60)} MIN</span>
+      <!-- Beat 3: Stats (2-3s) -->
+      <div style="animation: fadeInUp 0.6s ease-out 2s both;">
+        <span class="font-mono text-sm text-dim tracking-[3px]">{boss.hp} HP · {Math.floor(boss.timeLimitSecs / 60)} MIN</span>
+      </div>
+      <div style="animation: fadeInUp 0.5s ease-out 2.4s both;">
+        <span class="font-mono text-[0.5rem] tracking-[5px] text-primary/40 uppercase">Prepare-toi</span>
       </div>
     </div>
   {/if}
@@ -527,23 +602,34 @@
     <div class="absolute inset-0 bg-[rgba(8,8,15,0.9)] flex flex-col items-center justify-center z-[25] gap-4">
       <h2 class="text-3xl font-black tracking-[8px]">EN PAUSE</h2>
       <button class="py-3 px-9 bg-primary text-white font-black rounded-[14px] tracking-[4px] uppercase hover:bg-primary-hover active:scale-[0.98] transition-all"
-        onclick={resumeGame}>REPRENDRE</button>
+        onclick={resumeGame} aria-label="Reprendre le combat">REPRENDRE</button>
       <button class="py-3 px-9 bg-transparent border-[1.5px] border-white/25 text-white font-bold text-xs tracking-[3px] rounded-[12px] cursor-pointer"
-        onclick={closeBattle}>QUITTER</button>
+        onclick={closeBattle} aria-label="Quitter le combat">QUITTER</button>
     </div>
   {/if}
 
-  <!-- Victory Screen -->
-  {#if isVictory}
-    <div class="absolute inset-0 bg-background/95 z-30 flex items-center justify-center overflow-y-auto">
-      <VictoryScreen state={battleState} {boss} onClaim={handleVictoryClaim} />
+  <!-- Victory Screen (with ceremony delay) -->
+  {#if isVictory && showResult}
+    <div class="absolute inset-0 bg-background/95 z-30 flex flex-col items-center justify-center overflow-y-auto"
+      style="animation: fadeInUp 0.6s ease-out both;">
+      {#if newPR}
+        <div class="mb-2 px-5 py-1.5 bg-gold/15 border border-gold/40 rounded-full"
+          style="animation: repPop 0.6s ease-out both;">
+          <span class="font-mono text-[0.65rem] tracking-[4px] text-gold font-black uppercase"
+            style="text-shadow: 0 0 12px color-mix(in srgb, var(--color-gold) 60%, transparent)">
+            {newPR === 'both' ? 'DOUBLE RECORD!' : newPR === 'reps' ? 'RECORD DE REPS!' : 'RECORD DE TEMPS!'}
+          </span>
+        </div>
+      {/if}
+      <VictoryScreen battleState={battleState} {boss} onClaim={handleVictoryClaim} />
     </div>
   {/if}
 
-  <!-- Defeat Screen -->
-  {#if isDefeat}
-    <div class="absolute inset-0 bg-background/95 z-30 flex items-center justify-center overflow-y-auto">
-      <DefeatScreen state={battleState} {boss} onRetry={handleRetry} onEasier={handleEasierBoss} />
+  <!-- Defeat Screen (with ceremony delay) -->
+  {#if isDefeat && showResult}
+    <div class="absolute inset-0 bg-background/95 z-30 flex items-center justify-center overflow-y-auto"
+      style="animation: fadeInUp 0.5s ease-out both;">
+      <DefeatScreen battleState={battleState} {boss} onRetry={handleRetry} onEasier={handleEasierBoss} />
     </div>
   {/if}
 </div>
@@ -554,8 +640,9 @@
     background-size: 32px 32px;
   }
   @keyframes dmgPop {
-    0%   { opacity: 1; transform: translateY(0) scale(1.3); }
-    60%  { opacity: 1; transform: translateY(-40px) scale(1); }
-    100% { opacity: 0; transform: translateY(-70px) scale(0.8); }
+    0%   { opacity: 1; transform: translateY(0) scale(1.6); }
+    20%  { opacity: 1; transform: translateY(-15px) scale(1.1); }
+    60%  { opacity: 1; transform: translateY(-50px) scale(1); }
+    100% { opacity: 0; transform: translateY(-80px) scale(0.7); }
   }
 </style>
