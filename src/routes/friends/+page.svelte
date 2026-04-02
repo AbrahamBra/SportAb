@@ -88,15 +88,11 @@
 
 <BackgroundFX />
 
-<div class="relative z-10 flex flex-col items-center min-h-screen px-6 pt-10 pb-10 max-w-[420px] mx-auto">
+<div class="relative z-10 flex flex-col items-center min-h-screen px-6 pt-10 pb-24 max-w-[420px] mx-auto">
 
   <!-- Header -->
-  <div class="w-full flex items-center justify-between mb-6"
+  <div class="w-full flex items-center justify-end mb-6"
     style="animation: fadeInDown 0.5s ease-out both">
-    <a href="/"
-      class="font-mono text-[0.6rem] tracking-[3px] text-dim/60 hover:text-primary/70 transition-colors uppercase">
-      ← RETOUR
-    </a>
     <div class="flex items-center gap-2">
       <span class="w-1.5 h-1.5 rounded-full bg-primary"
         style="animation: statusDot 1.5s ease-in-out infinite; box-shadow: 0 0 6px rgba(230,57,70,0.9)"></span>
@@ -190,7 +186,7 @@
             <div class="text-center py-10">
               <p class="text-3xl mb-3">👥</p>
               <p class="text-[0.65rem] text-dim/50 font-mono tracking-[1px] leading-relaxed">
-                Aucun ami pour l'instant.<br>Partage ton code pour commencer !
+                Aucun allie dans ta guilde. Partage ton code pour recruter ! ⚔️
               </p>
             </div>
           {:else}
@@ -217,7 +213,7 @@
           <div class="text-center py-10">
             <p class="text-3xl mb-3">⚔️</p>
             <p class="text-[0.65rem] text-dim/50 font-mono tracking-[1px] leading-relaxed">
-              Aucun defi en attente.<br>Defie tes amis apres un combat !
+              Aucun rival a l'horizon. Defie un ami apres ton prochain combat ⚔️
             </p>
           </div>
         {:else}
@@ -233,10 +229,4 @@
     </div>
   {/if}
 
-  <!-- Nav -->
-  <a href="/"
-    class="mt-7 font-mono text-[0.6rem] text-dim/60 tracking-[4px] hover:text-primary/70 transition-colors uppercase"
-    style="animation: fadeInUp 0.5s 0.9s ease-out both">
-    ◆ ACCUEIL ◆
-  </a>
 </div>

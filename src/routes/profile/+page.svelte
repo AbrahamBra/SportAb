@@ -1,9 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
   import { computeLevel, xpForNextLevel } from '$lib/game/progression';
   import BackgroundFX from '$lib/components/BackgroundFX.svelte';
   import XPBar from '$lib/components/XPBar.svelte';
+  import FriendCodeDisplay from '$lib/components/FriendCodeDisplay.svelte';
+  import { createClient } from '$lib/supabase/client';
+  import { getMyFriendCode } from '$lib/supabase/friends';
 
   interface BattleRecord {
     bossId: string; bossName: string; result: string; reps: number; date: string;
@@ -13,6 +15,7 @@
   let playerLevel = $derived(computeLevel(totalXP));
   let displayName = $state('Guerrier');
   let battleHistory = $state<BattleRecord[]>([]);
+  let friendCode = $state<string | null>(null);
 
   const totalReps   = $derived(battleHistory.reduce((sum, b) => sum + b.reps, 0));
   const bossesSlain = $derived(battleHistory.filter((b) => b.result === 'victory').length);
@@ -52,7 +55,7 @@
     return map[bossId] ?? 'text-white';
   }
 
-  onMount(() => {
+  onMount(async () => {
     const savedXP = localStorage.getItem('pushquest_xp');
     if (savedXP) totalXP = parseInt(savedXP, 10) || 0;
     const savedName = localStorage.getItem('pushquest_name');
@@ -61,21 +64,19 @@
       const raw = localStorage.getItem('pushquest_history');
       if (raw) battleHistory = JSON.parse(raw) as BattleRecord[];
     } catch {}
+
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const code = await getMyFriendCode();
+      if (code) friendCode = code;
+    }
   });
 </script>
 
 <BackgroundFX />
 
-<div class="relative z-10 flex flex-col min-h-screen px-6 pt-8 pb-10 max-w-[420px] mx-auto">
-
-  <!-- Back -->
-  <button
-    class="self-start flex items-center gap-2 text-sm font-mono text-dim/70 tracking-[3px] hover:text-primary/80 transition-colors mb-6"
-    style="animation: fadeInDown 0.4s ease-out both"
-    onclick={() => goto('/')}
-  >
-    ← RETOUR
-  </button>
+<div class="relative z-10 flex flex-col min-h-screen px-6 pt-8 pb-24 max-w-[420px] mx-auto">
 
   <!-- System label -->
   <div class="flex items-center gap-2 mb-6 self-center"
@@ -148,6 +149,13 @@
     </div>
   </div>
 
+  <!-- Friend Code -->
+  {#if friendCode}
+    <div class="w-full mb-6" style="animation: fadeInUp 0.5s 0.5s ease-out both">
+      <FriendCodeDisplay code={friendCode} />
+    </div>
+  {/if}
+
   <!-- Battle History -->
   <div class="flex-1" style="animation: fadeInUp 0.5s 0.55s ease-out both">
     <p class="font-mono text-[0.58rem] tracking-[5px] text-dim/60 uppercase mb-3">◆ Historique des Combats</p>
@@ -178,4 +186,8 @@
       </div>
     {/if}
   </div>
+
+  <a href="/legal" class="font-mono text-[0.45rem] text-dim/30 tracking-[2px] mt-6 hover:text-dim/50 transition-colors uppercase">
+    Confidentialite · CGU
+  </a>
 </div>
