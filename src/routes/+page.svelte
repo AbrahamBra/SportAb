@@ -91,7 +91,7 @@
 
 <BackgroundFX />
 
-<div class="relative z-10 flex flex-col items-center min-h-screen px-6 pt-10 pb-10 max-w-[420px] mx-auto">
+<div class="relative z-10 flex flex-col items-center min-h-screen px-6 pt-10 pb-24 max-w-[420px] mx-auto">
 
   <!-- System status bar -->
   <div class="w-full flex items-center gap-2 mb-8 self-start"
@@ -230,25 +230,4 @@
       style="animation: systemBoot 0.5s ease-out both">{modelStatus}</p>
   {/if}
 
-  <!-- Nav links -->
-  <div class="flex gap-4 flex-wrap justify-center mt-7" style="animation: fadeInUp 0.5s 0.9s ease-out both">
-    <a href="/programs"
-      class="font-mono text-[0.6rem] text-dim/60 tracking-[4px] hover:text-primary/70 transition-colors uppercase">
-      <DiamondIcon /> PROGRAMMES <DiamondIcon />
-    </a>
-    <a href="/friends"
-      class="font-mono text-[0.6rem] text-dim/60 tracking-[4px] hover:text-gold/70 transition-colors uppercase">
-      <DiamondIcon /> AMIS <DiamondIcon />
-    </a>
-    <a href="/profile"
-      class="font-mono text-[0.6rem] text-dim/60 tracking-[4px] hover:text-primary/70 transition-colors uppercase">
-      <DiamondIcon /> PROFIL <DiamondIcon />
-    </a>
-  </div>
-
-  <!-- Legal -->
-  <a href="/legal" class="font-mono text-[0.45rem] text-dim/30 tracking-[2px] mt-6 hover:text-dim/50 transition-colors uppercase"
-    style="animation: fadeInUp 0.5s 1s ease-out both">
-    Confidentialite · CGU
-  </a>
 </div>
