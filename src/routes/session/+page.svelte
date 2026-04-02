@@ -8,6 +8,10 @@
   import { getActiveProgram, advanceSession, saveSessionCompletion } from '$lib/utils/session-storage';
   import { EXERCISES } from '$lib/ai/exercises.config';
   import { loadSessionBattleResult, clearSessionBattleResult } from '$lib/utils/session-battle-state';
+  import { computeNextTargets, getEncouragement, type ExerciseTarget } from '$lib/game/progression-engine';
+  import { getSessionHistory } from '$lib/utils/session-storage';
+  import { getLastWeight } from '$lib/utils/exercise-history';
+  import { loadStartingWeights } from '$lib/game/starting-weights';
   import { playSound, preloadSounds } from '$lib/game/audio';
   import BackgroundFX from '$lib/components/BackgroundFX.svelte';
   import FormFeedback from '$lib/components/FormFeedback.svelte';
@@ -34,6 +38,22 @@
   let showFormFeedback = $state(false);
   let lastFormScore = $state(0);
 
+  // Progression state
+  let exerciseTargets = $state<Map<string, ExerciseTarget>>(new Map());
+  let encouragement = $state<string | null>(null);
+  let encouragementTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function showEncouragement(msg: string | null): void {
+    if (!msg) return;
+    encouragement = msg;
+    if (encouragementTimer) clearTimeout(encouragementTimer);
+    encouragementTimer = setTimeout(() => { encouragement = null; }, 2500);
+  }
+
+  function getTarget(exerciseId: string): ExerciseTarget | undefined {
+    return exerciseTargets.get(exerciseId);
+  }
+
   function updateState(): void {
     if (engine) sessionState = engine.getState();
   }
@@ -59,9 +79,14 @@
   }
 
   function completeManualSet(reps: number, weightKg?: number): void {
-    if (!engine) return;
+    if (!engine || !sessionState?.currentExercise) return;
+    const ex = sessionState.currentExercise;
+    const lastW = getLastWeight(ex.exerciseId);
     engine.completeSet(reps, weightKg ?? null);
     playSound('rep');
+    // Encouragement
+    const msg = getEncouragement(reps, ex.reps, weightKg ?? null, lastW);
+    showEncouragement(msg);
     updateState();
     startRestTimer();
   }
@@ -164,6 +189,21 @@
     engine = createSessionEngine(session, hasDetection);
     updateState();
 
+    // Compute progression targets for all exercises
+    const history = getSessionHistory();
+    const startingW = loadStartingWeights();
+    const targets = new Map<string, ExerciseTarget>();
+    for (const ex of session.exercises) {
+      const target = computeNextTargets(ex, history);
+      // If no suggested weight but starting weights exist, use those
+      if (target.suggestedWeightKg === null && startingW && startingW[ex.exerciseId]) {
+        target.suggestedWeightKg = startingW[ex.exerciseId]!;
+        target.progressionNote = `Poids suggere : ${target.suggestedWeightKg}kg`;
+      }
+      targets.set(ex.exerciseId, target);
+    }
+    exerciseTargets = targets;
+
     // Check for returning from session battle
     const battleResult = loadSessionBattleResult();
     if (battleResult && engine) {
@@ -262,6 +302,17 @@
       </div>
     </div>
 
+    <!-- Encouragement toast -->
+    {#if encouragement}
+      <div class="w-full text-center py-2 mb-2" style="animation: fadeInUp 0.2s ease-out both">
+        <span class="font-mono text-[0.65rem] font-bold tracking-[1px]
+          {encouragement.includes('RECORD') || encouragement.includes('monte') ? 'text-gold' : 'text-dim/70'}"
+          style={encouragement.includes('RECORD') ? 'text-shadow: 0 0 10px rgba(255,209,102,0.5)' : ''}>
+          {encouragement}
+        </span>
+      </div>
+    {/if}
+
     {#if sessionState.phase === 'rest'}
       <!-- Rest phase -->
       <div class="w-full flex flex-col items-center py-8" style="animation: fadeInUp 0.3s ease-out both">
@@ -290,6 +341,15 @@
           </p>
           {#if ex.notes}
             <p class="font-mono text-[0.5rem] text-gold/50 tracking-[0.5px] mt-1 italic">{ex.notes}</p>
+          {/if}
+          <!-- Progression note -->
+          {@const target = getTarget(ex.exerciseId)}
+          {#if target?.progressionNote}
+            <p class="font-mono text-[0.5rem] tracking-[1px] mt-1
+              {target.isProgression ? 'text-gold/80' : 'text-dim/50'}"
+              style={target.isProgression ? 'text-shadow: 0 0 6px rgba(255,209,102,0.4)' : ''}>
+              {target.isProgression ? '↑ ' : ''}{target.progressionNote}
+            </p>
           {/if}
         </div>
 
@@ -324,7 +384,13 @@
           </div>
         {:else}
           <!-- Manual mode -->
-          <ManualRepInput targetReps={ex.reps} onSubmit={completeManualSet} />
+          {@const manualTarget = getTarget(ex.exerciseId)}
+          <ManualRepInput
+            targetReps={manualTarget?.suggestedReps ?? ex.reps}
+            suggestedWeight={manualTarget?.suggestedWeightKg}
+            isProgression={manualTarget?.isProgression ?? false}
+            onSubmit={completeManualSet}
+          />
         {/if}
       </div>
 

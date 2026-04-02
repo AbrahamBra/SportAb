@@ -1,12 +1,22 @@
 <script lang="ts">
-  let { targetReps, onSubmit }: {
+  let { targetReps, suggestedWeight = null, isProgression = false, onSubmit }: {
     targetReps: string;
+    suggestedWeight?: number | null;
+    isProgression?: boolean;
     onSubmit: (reps: number, weightKg?: number) => void;
   } = $props();
 
   let reps = $state(parseInt(targetReps) || 10);
-  let weight = $state(0);
-  let showWeight = $state(false);
+  let weight = $state(suggestedWeight ?? 0);
+  let showWeight = $state(suggestedWeight !== null && suggestedWeight > 0);
+
+  // Update weight when suggestedWeight changes
+  $effect(() => {
+    if (suggestedWeight !== null && suggestedWeight > 0) {
+      weight = suggestedWeight;
+      showWeight = true;
+    }
+  });
 
   function adjustReps(delta: number): void {
     reps = Math.max(0, reps + delta);
@@ -28,7 +38,7 @@
     <span class="font-mono text-[0.55rem] tracking-[4px] text-dim/60 uppercase">Reps (cible: {targetReps})</span>
     <div class="flex items-center gap-3">
       <button
-        class="w-10 h-10 rounded-lg bg-surface/80 border border-white/[0.1] text-white text-lg font-bold
+        class="w-11 h-11 rounded-lg bg-surface/80 border border-white/[0.1] text-white text-lg font-bold
           hover:border-primary/40 active:scale-95 transition-all"
         onclick={() => adjustReps(-1)}
       >−</button>
@@ -36,14 +46,14 @@
         style="text-shadow: 0 0 15px rgba(230,57,70,0.5)"
       >{reps}</span>
       <button
-        class="w-10 h-10 rounded-lg bg-surface/80 border border-white/[0.1] text-white text-lg font-bold
+        class="w-11 h-11 rounded-lg bg-surface/80 border border-white/[0.1] text-white text-lg font-bold
           hover:border-primary/40 active:scale-95 transition-all"
         onclick={() => adjustReps(1)}
       >+</button>
     </div>
   </div>
 
-  <!-- Weight toggle + input -->
+  <!-- Weight input (auto-shown if suggested weight exists) -->
   {#if !showWeight}
     <button
       class="text-[0.6rem] font-mono text-dim/50 tracking-[2px] hover:text-gold/70 transition-colors"
@@ -51,18 +61,25 @@
     >+ AJOUTER POIDS</button>
   {:else}
     <div class="flex flex-col items-center gap-2" style="animation: fadeInUp 0.3s ease-out both">
-      <span class="font-mono text-[0.55rem] tracking-[4px] text-dim/60 uppercase">Poids (kg)</span>
+      <div class="flex items-center gap-2">
+        <span class="font-mono text-[0.55rem] tracking-[4px] text-dim/60 uppercase">Poids (kg)</span>
+        {#if isProgression}
+          <span class="text-[0.5rem] font-bold text-gold tracking-[1px]"
+            style="text-shadow: 0 0 8px rgba(255,209,102,0.5)">↑ AUGMENTE</span>
+        {/if}
+      </div>
       <div class="flex items-center gap-3">
         <button
-          class="w-10 h-10 rounded-lg bg-surface/80 border border-white/[0.1] text-white text-lg font-bold
+          class="w-11 h-11 rounded-lg bg-surface/80 border border-white/[0.1] text-white text-lg font-bold
             hover:border-gold/40 active:scale-95 transition-all"
           onclick={() => adjustWeight(-2.5)}
         >−</button>
-        <span class="font-mono text-2xl font-bold text-gold w-20 text-center"
+        <span class="font-mono text-2xl font-bold w-20 text-center
+          {isProgression ? 'text-gold' : 'text-gold'}"
           style="text-shadow: 0 0 10px rgba(255,209,102,0.4)"
         >{weight}</span>
         <button
-          class="w-10 h-10 rounded-lg bg-surface/80 border border-white/[0.1] text-white text-lg font-bold
+          class="w-11 h-11 rounded-lg bg-surface/80 border border-white/[0.1] text-white text-lg font-bold
             hover:border-gold/40 active:scale-95 transition-all"
           onclick={() => adjustWeight(2.5)}
         >+</button>
