@@ -24,16 +24,12 @@
 
 <BackgroundFX />
 
-<div class="relative z-10 flex flex-col items-center min-h-screen px-6 pt-10 pb-10 max-w-[420px] mx-auto">
+<div class="relative z-10 flex flex-col items-center min-h-screen px-6 pt-10 pb-24 max-w-[420px] mx-auto">
 
   <!-- Back + System bar -->
   <div class="w-full flex items-center justify-between mb-6"
     style="animation: fadeInDown 0.5s ease-out both">
-    <a href="/"
-      class="font-mono text-[0.6rem] tracking-[3px] text-dim/60 hover:text-primary/70 transition-colors uppercase">
-      ← RETOUR
-    </a>
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 ml-auto">
       <span class="w-1.5 h-1.5 rounded-full bg-primary"
         style="animation: statusDot 1.5s ease-in-out infinite; box-shadow: 0 0 6px color-mix(in srgb, var(--color-primary) 90%, transparent)"></span>
       <span class="font-mono text-[0.6rem] tracking-[4px] text-primary/70 uppercase">PROGRAMMES</span>
@@ -99,10 +95,4 @@
     </div>
   {/if}
 
-  <!-- Home link -->
-  <a href="/"
-    class="mt-7 font-mono text-[0.6rem] text-dim/60 tracking-[4px] hover:text-primary/70 transition-colors uppercase"
-    style="animation: fadeInUp 0.5s 0.9s ease-out both">
-    ◆ ACCUEIL ◆
-  </a>
 </div>
