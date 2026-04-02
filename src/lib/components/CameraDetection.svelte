@@ -43,6 +43,10 @@
   let animHandle = 0;
   let stream: MediaStream | null = null;
 
+  // Store last detected keypoints so skeleton is drawn synchronously each frame
+  let lastScaledKeypoints: { name: string; score: number; x: number; y: number }[] = [];
+  let detecting = false;
+
   function renderLoop(): void {
     if (!active || !canvasEl || !videoEl) return;
 
@@ -66,40 +70,42 @@
     }
     ctx.restore();
 
-    // Pose detection + skeleton
-    if (!paused && videoEl.readyState >= 2 && isDetectorReady()) {
+    // Draw skeleton from last detection (synchronous — always visible)
+    if (lastScaledKeypoints.length > 0) {
+      const sm = Object.fromEntries(lastScaledKeypoints.map(k => [k.name, k]));
+      ctx.lineWidth = 3; ctx.lineCap = 'round';
+      for (const [a, b] of CONNECTIONS) {
+        const ka = sm[a], kb = sm[b];
+        if (ka && kb && ka.score > 0.3 && kb.score > 0.3) {
+          ctx.beginPath(); ctx.strokeStyle = 'rgba(255,60,60,0.85)';
+          ctx.moveTo(ka.x, ka.y); ctx.lineTo(kb.x, kb.y); ctx.stroke();
+        }
+      }
+      for (const k of lastScaledKeypoints) {
+        if (k.score > 0.3) {
+          ctx.beginPath(); ctx.arc(k.x, k.y, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = '#ff3a3a'; ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
+        }
+      }
+    }
+
+    // Pose detection (async — updates stored keypoints for next frame)
+    if (!paused && !detecting && videoEl.readyState >= 2 && isDetectorReady()) {
+      detecting = true;
       detectPose(videoEl).then((keypoints) => {
+        detecting = false;
         if (!active || !canvasEl || keypoints.length === 0) return;
-        const cCtx = canvasEl.getContext('2d');
-        if (!cCtx) return;
 
         const cW = canvasEl.width, cH = canvasEl.height;
         const vw = videoEl!.videoWidth || cW, vh = videoEl!.videoHeight || cH;
         const scale = Math.max(cW / vw, cH / vh);
         const ox = (cW - vw * scale) / 2, oy = (cH - vh * scale) / 2;
 
-        const scaled = keypoints.map(k => ({
+        lastScaledKeypoints = keypoints.map(k => ({
           name: k.name, score: k.score,
           x: cW - (k.x * scale + ox), y: k.y * scale + oy,
         }));
-        const sm = Object.fromEntries(scaled.map(k => [k.name, k]));
-
-        // Draw skeleton
-        cCtx.lineWidth = 3; cCtx.lineCap = 'round';
-        for (const [a, b] of CONNECTIONS) {
-          const ka = sm[a], kb = sm[b];
-          if (ka && kb && ka.score > 0.3 && kb.score > 0.3) {
-            cCtx.beginPath(); cCtx.strokeStyle = 'rgba(255,60,60,0.85)';
-            cCtx.moveTo(ka.x, ka.y); cCtx.lineTo(kb.x, kb.y); cCtx.stroke();
-          }
-        }
-        for (const k of scaled) {
-          if (k.score > 0.3) {
-            cCtx.beginPath(); cCtx.arc(k.x, k.y, 5, 0, 2 * Math.PI);
-            cCtx.fillStyle = '#ff3a3a'; cCtx.fill();
-            cCtx.strokeStyle = 'rgba(255,255,255,0.6)'; cCtx.lineWidth = 1.5; cCtx.stroke();
-          }
-        }
 
         // Exercise detection
         if (detector) {
@@ -109,7 +115,7 @@
           if (onFormUpdate) onFormUpdate(detector.getFormScore() * 100);
           if (newReps > prevReps) onRep();
         }
-      }).catch(() => {});
+      }).catch(() => { detecting = false; });
     }
 
     animHandle = requestAnimationFrame(renderLoop);
