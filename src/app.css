@@ -22,6 +22,23 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Landscape blocker overlay */
+@media (orientation: landscape) and (max-height: 500px) {
+  body::after {
+    content: 'Tourne ton telephone en portrait 📱';
+    position: fixed; inset: 0; z-index: 99999;
+    display: flex; align-items: center; justify-content: center;
+    background: #08080F; color: #E63946;
+    font: 900 1.2rem 'Inter', sans-serif; letter-spacing: 2px; text-align: center;
+    padding: 2rem;
+  }
+}
+
+/* Small screen adjustments */
+@media (max-width: 360px) {
+  html { font-size: 14px; }
+}
+
 /* ─── CYBERPUNK / SOLO LEVELING ANIMATIONS ─────────────────────────────── */
 
 @keyframes fadeInUp {

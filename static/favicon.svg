@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#08080F"/>
+  <rect x="20" y="20" width="472" height="472" rx="80" fill="none" stroke="#E63946" stroke-width="6" opacity="0.3"/>
+  <!-- Sword icon -->
+  <g transform="translate(256,256) rotate(-45)">
+    <!-- Blade -->
+    <rect x="-12" y="-160" width="24" height="200" rx="4" fill="#E63946"/>
+    <rect x="-8" y="-160" width="16" height="200" rx="2" fill="#ff4d5a" opacity="0.6"/>
+    <!-- Guard -->
+    <rect x="-40" y="40" width="80" height="16" rx="4" fill="#FFD166"/>
+    <!-- Handle -->
+    <rect x="-8" y="56" width="16" height="60" rx="4" fill="#B8943F"/>
+    <!-- Pommel -->
+    <circle cx="0" cy="124" r="12" fill="#FFD166"/>
+  </g>
+  <!-- PQ text -->
+  <text x="256" y="440" text-anchor="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="80" fill="#E63946" letter-spacing="8" font-style="italic">PQ</text>
+  <!-- Glow -->
+  <circle cx="200" cy="180" r="80" fill="#E63946" opacity="0.08"/>
+  <circle cx="340" cy="360" r="60" fill="#FFD166" opacity="0.06"/>
+</svg>
