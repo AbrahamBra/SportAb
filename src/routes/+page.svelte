@@ -188,6 +188,22 @@
     </div>
   </div>
 
+  <!-- Duel CTA -->
+  <div class="w-full mb-4" style="animation: fadeInUp 0.5s 0.33s ease-out both">
+    <a
+      href="/duel"
+      class="w-full relative group block"
+    >
+      <div class="absolute inset-0 rounded-[14px] -skew-x-[8deg]"
+        style="background: rgba(139,92,246,0.1); animation: pulseGlow 2.5s ease-in-out infinite;"></div>
+      <div class="relative w-full py-3.5 bg-purple-500/15 border-2 border-purple-500/40 text-purple-400 font-black rounded-[14px] text-[0.8rem] tracking-[4px] uppercase text-center
+        hover:bg-purple-500/25 active:scale-[0.97] transition-all -skew-x-[8deg]"
+        style="text-shadow: 0 0 12px rgba(139,92,246,0.5)">
+        <span class="inline-block skew-x-[8deg]">⚔️ DUEL 1v1</span>
+      </div>
+    </a>
+  </div>
+
   {#if !data.session}
     <MultiplayerCTA />
   {/if}

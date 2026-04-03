@@ -18,7 +18,8 @@
     !page.url.pathname.startsWith('/onboarding') &&
     !page.url.pathname.startsWith('/battle') &&
     !page.url.pathname.startsWith('/session/battle') &&
-    !page.url.pathname.startsWith('/auth')
+    !page.url.pathname.startsWith('/auth') &&
+    !(page.url.pathname.includes('/duel/') && page.url.pathname.includes('/battle'))
   );
 
   onMount(() => {
